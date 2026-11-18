@@ -5,7 +5,8 @@
 // ============================================================================
 import { useState } from 'react';
 import { Trash2 } from 'lucide-react';
-import type { CleSection, FragmentAClasser } from '../../types';
+import type { FragmentAClasser } from '../../types';
+import type { Destination } from '../../lib/import/classer';
 import { LIBELLES_SECTIONS } from '../../data/constantes';
 import { ChoixSection } from './ChoixSection';
 import { confirmer } from '../../store/dialogues';
@@ -13,7 +14,7 @@ import { confirmer } from '../../store/dialogues';
 interface Props {
   fragment: FragmentAClasser;
   /** lignes = numéros des lignes cochées (vide = tout) ; section null = supprimer */
-  onEnvoyer: (lignes: number[], section: CleSection | null) => void;
+  onEnvoyer: (lignes: number[], section: Destination | null) => void;
 }
 
 export function FragmentACocher({ fragment, onEnvoyer }: Props) {
@@ -31,7 +32,7 @@ export function FragmentACocher({ fragment, onEnvoyer }: Props) {
     setDernier(i);
   };
 
-  const envoyer = (section: CleSection | null) => {
+  const envoyer = (section: Destination | null) => {
     onEnvoyer(cochees, section);
     setCochees([]);
     setDernier(null);

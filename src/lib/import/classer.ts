@@ -2,10 +2,10 @@
 //  Après l'import : création du CV, classement des textes « À classer »,
 //  liste des points à compléter
 // ============================================================================
-import type { CleSection, CV, DonneesCV, FragmentAClasser } from '../../types';
+import type { CleSection, CV, DonneesCV, FragmentAClasser, InfosPerso } from '../../types';
 import { cvVierge, uid } from '../cv';
 import { lignesDepuisTexte } from './lireDocx';
-import { detecterTitre, versCentresInteret, versCertifications, versCompetences, versExperiences, versFormations, versLangues, type ResultatImport } from './decouperSections';
+import { coordonneesDepuisTexte, detecterTitre, separerNom, versCentresInteret, versCertifications, versCompetences, versExperiences, versFormations, versLangues, type ResultatImport } from './decouperSections';
 
 /** Crée un CV au format Finance à partir du résultat de l'import */
 export function cvDepuisImport(r: ResultatImport, nom?: string): CV {
@@ -27,8 +27,79 @@ export function remplacerContenu(cv: CV, r: ResultatImport) {
   cv.aClasser = [...cv.aClasser, ...structuredClone(r.aClasser)];
 }
 
-/** Ajoute un texte libre dans une section du CV (modifie `d`) */
-export function ajouterTexte(d: DonneesCV, texte: string, section: CleSection) {
+// ---------------------------------------------------------------------------
+//  Destinations possibles d'un texte « à classer » : une rubrique du CV,
+//  ou un champ précis des informations personnelles
+// ---------------------------------------------------------------------------
+export type ChampInfo = 'nomComplet' | 'prenom' | 'nom' | 'titre' | 'email' | 'telephone' | 'ville' | 'linkedin' | 'site'
+  | 'dateNaissance' | 'rythmeAlternance' | 'auto';
+export type Destination = CleSection | `infos.${ChampInfo}`;
+
+/** Sous-rubriques de « Infos perso », dans l'ordre du menu */
+export const CHAMPS_INFOS: [ChampInfo, string][] = [
+  ['auto', 'Détection automatique (email, téléphone, ville…)'],
+  ['nomComplet', 'Prénom et nom'],
+  ['prenom', 'Prénom'],
+  ['nom', 'Nom'],
+  ['titre', 'Titre / poste visé'],
+  ['email', 'Email'],
+  ['telephone', 'Téléphone'],
+  ['ville', 'Ville / localisation'],
+  ['linkedin', 'LinkedIn'],
+  ['site', 'Site / GitHub / portfolio'],
+  ['dateNaissance', 'Date de naissance'],
+  ['rythmeAlternance', 'Rythme d’alternance'],
+];
+
+export const estInfo = (d: Destination): d is `infos.${ChampInfo}` => d.startsWith('infos.');
+
+/** Libellé lisible d'une destination : « Infos perso › Ville / localisation » */
+export function libelleDestination(d: Destination, libellesSections: Record<CleSection, string>): string {
+  if (!estInfo(d)) return libellesSections[d];
+  const champ = d.slice(6) as ChampInfo;
+  return `Infos perso › ${CHAMPS_INFOS.find(([c]) => c === champ)?.[1] ?? champ}`;
+}
+
+/** Retire une étiquette en début de texte : « Ville : Lyon » -> « Lyon », « Poste visé : Analyste » -> « Analyste » */
+const sansEtiquette = (t: string) => t.replace(/^\s*[A-Za-zÀ-ÿ'’ /.-]{2,30}\s*:\s+/, '').trim();
+
+/** Remplit un champ des infos perso ; renvoie les lignes non utilisées (détection automatique) */
+function versInfos(d: DonneesCV, lignes: string[], champ: ChampInfo): string[] {
+  const p = d.infosPerso;
+  const propres = lignes.map(l => l.replace(/^•\s*/, '').trim()).filter(Boolean);
+  const { coordonnees: c, restes } = coordonneesDepuisTexte(propres);
+  if (champ === 'auto') {
+    (Object.keys(c) as (keyof typeof c)[]).forEach(k => { if (c[k]) p[k] = c[k]; });
+    return restes;
+  }
+  const valeur = sansEtiquette(propres.join(' ').replace(/\s+/g, ' '));
+  if (!valeur) return [];
+  switch (champ) {
+    case 'nomComplet': {
+      const [prenom, nom] = separerNom(valeur);
+      p.prenom = prenom; p.nom = nom;
+      break;
+    }
+    case 'rythmeAlternance':
+      d.rythmeAlternance = valeur;
+      break;
+    // Pour l'email, le téléphone, LinkedIn et le site : la valeur reconnue si possible, sinon le texte tel quel
+    case 'email': case 'telephone': case 'linkedin': case 'site':
+      p[champ] = c[champ] || valeur;
+      break;
+    default:
+      (p as Record<Exclude<keyof InfosPerso, 'photo'>, string>)[champ] = valeur;
+  }
+  return [];
+}
+
+/**
+ * Ajoute un texte libre dans une section du CV, ou dans un champ des infos perso (modifie `d`).
+ * Renvoie les lignes qui n'ont pas pu être utilisées (elles restent « à classer »).
+ */
+export function ajouterTexte(d: DonneesCV, texte: string, destination: Destination): string[] {
+  if (estInfo(destination)) return versInfos(d, texte.split('\n'), destination.slice(6) as ChampInfo);
+  const section = destination;
   // On retire une éventuelle première ligne de titre de section (« Projets », « Bénévolat »…)
   const lignes = lignesDepuisTexte(texte).filter((l, i) => !(i === 0 && detecterTitre(l))).map(l => l.texte);
   switch (section) {
@@ -60,14 +131,12 @@ export function ajouterTexte(d: DonneesCV, texte: string, section: CleSection) {
       d.centresInteret.push(...versCentresInteret(lignes));
       break;
   }
+  return [];
 }
 
 /** Envoie un fragment « À classer » vers une section, puis le retire de la liste */
-export function classerFragment(cv: CV, fragmentId: string, section: CleSection) {
-  const f = cv.aClasser.find(x => x.id === fragmentId);
-  if (!f) return;
-  ajouterTexte(cv.donnees, f.texte, section);
-  cv.aClasser = cv.aClasser.filter(x => x.id !== fragmentId);
+export function classerFragment(cv: CV, fragmentId: string, section: Destination) {
+  cv.aClasser = classerLignes(cv.donnees, cv.aClasser, fragmentId, [], section);
 }
 
 /**
@@ -75,21 +144,21 @@ export function classerFragment(cv: CV, fragmentId: string, section: CleSection)
  * Les lignes restantes restent « à classer ». Renvoie la nouvelle liste « À classer ».
  * (lignes = numéros des lignes choisies ; vide = tout le fragment)
  */
-export function classerLignes(d: DonneesCV, aClasser: FragmentAClasser[], fragmentId: string, lignes: number[], section: CleSection | null): FragmentAClasser[] {
+export function classerLignes(d: DonneesCV, aClasser: FragmentAClasser[], fragmentId: string, lignes: number[], section: Destination | null): FragmentAClasser[] {
   const f = aClasser.find(x => x.id === fragmentId);
   if (!f) return aClasser;
   const toutes = f.texte.split('\n');
   const choisies = lignes.length ? lignes : toutes.map((_, i) => i);
   // section null = supprimer les lignes choisies
-  if (section) ajouterTexte(d, choisies.sort((a, b) => a - b).map(i => toutes[i]).join('\n'), section);
-  const restantes = toutes.filter((_, i) => !choisies.includes(i));
+  const nonUtilisees = section ? ajouterTexte(d, choisies.sort((a, b) => a - b).map(i => toutes[i]).join('\n'), section) : [];
+  const restantes = [...toutes.filter((_, i) => !choisies.includes(i)), ...nonUtilisees];
   return restantes.some(l => l.trim())
     ? aClasser.map(x => (x.id === fragmentId ? { ...x, texte: restantes.join('\n') } : x))
     : aClasser.filter(x => x.id !== fragmentId);
 }
 
 /** Version pour un CV complet */
-export function classerSelection(cv: CV, fragmentId: string, lignes: number[], section: CleSection | null) {
+export function classerSelection(cv: CV, fragmentId: string, lignes: number[], section: Destination | null) {
   cv.aClasser = classerLignes(cv.donnees, cv.aClasser, fragmentId, lignes, section);
 }
 

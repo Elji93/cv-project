@@ -4,12 +4,11 @@
 // ============================================================================
 import { useState } from 'react';
 import { ArrowLeft, Check } from 'lucide-react';
-import type { CleSection } from '../../types';
 import { useAppStore } from '../../store/useAppStore';
 import { lirePdf, type ContenuImporte, type LigneImportee } from '../../lib/import/lirePdf';
 import { lireDocx, lignesDepuisTexte } from '../../lib/import/lireDocx';
 import { decouperCv, type ResultatImport } from '../../lib/import/decouperSections';
-import { classerLignes, cvDepuisImport, remplacerContenu } from '../../lib/import/classer';
+import { ajouterTexte, classerLignes, cvDepuisImport, remplacerContenu, type ChampInfo, type Destination } from '../../lib/import/classer';
 import { Modale } from '../commun/Modale';
 import { confirmer } from '../../store/dialogues';
 import { EtapeChoixFichier } from './EtapeChoixFichier';
@@ -51,12 +50,22 @@ export function ModaleImport({ onFermer }: { onFermer: () => void }) {
   };
 
   /** Classement fait à l'écran de vérification : appliqué tout de suite au résultat */
-  const classer = (fragmentId: string, lignesChoisies: number[], section: CleSection | null) => {
+  const classer = (fragmentId: string, lignesChoisies: number[], section: Destination | null) => {
     setResultat(r => {
       if (!r) return r;
       const donnees = structuredClone(r.donnees);
       const aClasser = classerLignes(donnees, r.aClasser, fragmentId, lignesChoisies, section);
       return { ...r, donnees, aClasser };
+    });
+  };
+
+  /** Ligne du texte extrait attribuée à un champ des infos perso */
+  const attribuer = (texte: string, champ: ChampInfo) => {
+    setResultat(r => {
+      if (!r) return r;
+      const donnees = structuredClone(r.donnees);
+      ajouterTexte(donnees, texte, `infos.${champ}`);
+      return { ...r, donnees };
     });
   };
 
@@ -77,7 +86,7 @@ export function ModaleImport({ onFermer }: { onFermer: () => void }) {
         <EtapeChoixFichier chargement={chargement} erreur={erreur} onFichier={lireFichier} onTexte={t => { setSource('texte collé'); analyser({ lignes: lignesDepuisTexte(t), photo: null }); }} />
       ) : (
         <>
-          <EtapeVerification lignes={lignes} resultat={resultat} onClasser={classer}
+          <EtapeVerification lignes={lignes} resultat={resultat} onClasser={classer} onAttribuer={attribuer}
             onInfo={(k, v) => setResultat(r => r && { ...r, donnees: { ...r.donnees, infosPerso: { ...r.donnees.infosPerso, [k]: v } } })}
             onPhoto={photo => setResultat(r => r && { ...r, donnees: { ...r.donnees, infosPerso: { ...r.donnees.infosPerso, photo } } })} />
           <div className="flex flex-wrap items-center gap-3 mt-4 pt-3 border-t border-gray-200">

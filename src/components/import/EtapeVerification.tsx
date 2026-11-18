@@ -1,10 +1,10 @@
 // Étape 2 de l'import : vérifier ce qui a été reconnu avant de créer le CV
 import { AlertCircle, CheckCircle2, ClipboardCopy, Inbox } from 'lucide-react';
 import { useState } from 'react';
-import type { CleSection, InfosPerso, Photo } from '../../types';
+import type { InfosPerso, Photo } from '../../types';
 import { calculerBilan, type ResultatImport } from '../../lib/import/decouperSections';
 import type { LigneImportee } from '../../lib/import/lirePdf';
-import { pointsACompleter } from '../../lib/import/classer';
+import { CHAMPS_INFOS, pointsACompleter, type ChampInfo, type Destination } from '../../lib/import/classer';
 import { formaterPeriode } from '../../lib/dates';
 import { LIBELLES_SECTIONS, ORDRE_PAR_DEFAUT } from '../../data/constantes';
 import { FragmentACocher } from './FragmentACocher';
@@ -13,8 +13,10 @@ interface Props {
   lignes: LigneImportee[];
   resultat: ResultatImport;
   /** Envoie des lignes d'un texte « À classer » vers une section (null = supprimer) */
-  onClasser: (fragmentId: string, lignes: number[], section: CleSection | null) => void;
+  onClasser: (fragmentId: string, lignes: number[], section: Destination | null) => void;
   onInfo: (k: Exclude<keyof InfosPerso, 'photo'>, v: string) => void;
+  /** Attribue une ligne du texte extrait à un champ des infos perso (la ligne reste où elle est) */
+  onAttribuer: (texte: string, champ: ChampInfo) => void;
   onPhoto: (p: Photo | null) => void;
 }
 
@@ -23,7 +25,8 @@ const CHAMPS: [Exclude<keyof InfosPerso, 'photo'>, string][] = [
   ['telephone', 'Téléphone'], ['ville', 'Ville'], ['linkedin', 'LinkedIn'], ['dateNaissance', 'Date de naissance'],
 ];
 
-export function EtapeVerification({ lignes, resultat, onClasser, onInfo, onPhoto }: Props) {
+export function EtapeVerification({ lignes, resultat, onClasser, onInfo, onAttribuer, onPhoto }: Props) {
+  const [ligneChoisie, setLigneChoisie] = useState<number | null>(null);
   const d = resultat.donnees;
   // On garde la photo trouvée de côté pour pouvoir la décocher puis la recocher
   const [photoTrouvee] = useState(d.infosPerso.photo);
@@ -49,9 +52,26 @@ export function EtapeVerification({ lignes, resultat, onClasser, onInfo, onPhoto
         </div>
         <ol className="max-h-[55vh] overflow-auto rounded-lg border border-gray-200 bg-gray-50 p-2 font-mono text-[11px] leading-relaxed text-gray-700">
           {lignes.map((l, i) => (
-            <li key={i} className={l.zone === 'gauche' ? 'text-sky-800' : ''} title={l.zone === 'pleine' ? undefined : `Colonne de ${l.zone}`}>{l.texte}</li>
+            <li key={i} title={l.zone === 'pleine' ? 'Cliquez pour attribuer cette ligne à vos infos perso' : `Colonne de ${l.zone} — cliquez pour l'attribuer à vos infos perso`}>
+              <button type="button" onClick={() => setLigneChoisie(ligneChoisie === i ? null : i)}
+                className={`w-full text-left rounded px-0.5 ${ligneChoisie === i ? 'bg-sky-100 ring-1 ring-sky-300' : 'hover:bg-white'} ${l.zone === 'gauche' ? 'text-sky-800' : ''}`}>
+                {l.texte}
+              </button>
+            </li>
           ))}
         </ol>
+        {ligneChoisie !== null && lignes[ligneChoisie] && (
+          <div className="mt-2 rounded-lg border border-sky-200 bg-sky-50 p-2 text-xs">
+            <p className="mb-1.5 text-gray-700">Ligne choisie : <b className="break-words">« {lignes[ligneChoisie].texte} »</b></p>
+            <select className="input py-1 text-xs" value="" aria-label="Attribuer la ligne à un champ des infos perso"
+              onChange={e => { if (e.target.value) { onAttribuer(lignes[ligneChoisie].texte, e.target.value as ChampInfo); setLigneChoisie(null); } }}>
+              <option value="">Attribuer à… (infos perso)</option>
+              {CHAMPS_INFOS.map(([c, libelle]) => <option key={c} value={c}>→ {libelle}</option>)}
+            </select>
+            <p className="mt-1 text-[11px] text-gray-500">La ligne est recopiée dans le champ choisi ; corrigez ensuite si besoin dans « Informations personnelles ».</p>
+          </div>
+        )}
+        {ligneChoisie === null && <p className="text-[11px] text-gray-500 mt-1">Astuce : cliquez sur une ligne pour l'attribuer à un champ (ville, date de naissance, nom…).</p>}
         {lignes.some(l => l.zone !== 'pleine') && <p className="text-[11px] text-gray-500 mt-1">Mise en page en 2 colonnes détectée : la colonne de gauche (en bleu) est lue en premier.</p>}
       </div>
 

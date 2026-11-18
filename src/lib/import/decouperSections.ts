@@ -131,7 +131,7 @@ export function ressembleVille(t: string) {
     || /\b\d{5}\b/.test(t) || /,\s*(france|belgique|suisse|uk|royaume uni)$/i.test(t.trim());
 }
 
-interface Coordonnees { email: string; telephone: string; ville: string; linkedin: string; site: string; dateNaissance: string }
+export interface Coordonnees { email: string; telephone: string; ville: string; linkedin: string; site: string; dateNaissance: string }
 
 /** Extrait les coordonnées d'une ligne ; renvoie le texte restant non reconnu */
 function extraireCoordonnees(ligne: string, c: Coordonnees): string {
@@ -152,6 +152,23 @@ function extraireCoordonnees(ligne: string, c: Coordonnees): string {
     if (t) restes.push(t);
   }
   return restes.join(' | ');
+}
+
+/**
+ * Coordonnées trouvées dans quelques lignes (email, téléphone, ville, LinkedIn, site, date de naissance),
+ * plus ce qui n'a pas été reconnu. Sert au classement manuel « Infos perso › Détection automatique ».
+ */
+export function coordonneesDepuisTexte(lignes: string[]): { coordonnees: Coordonnees; restes: string[] } {
+  const c: Coordonnees = { email: '', telephone: '', ville: '', linkedin: '', site: '', dateNaissance: '' };
+  const restes: string[] = [];
+  for (const l of lignes) {
+    // « Localisation : Lyon » / « Ville : Lyon »
+    const lieu = sansPuce(l).match(/^\s*(?:localisation|lieu(?: de r[ée]sidence)?|ville|adresse|location|r[ée]sidence|domicile)\s*:\s*(.+)$/i);
+    if (lieu && !c.ville) { c.ville = lieu[1].trim(); continue; }
+    const reste = extraireCoordonnees(sansPuce(l), c);
+    if (reste && reste.replace(/[^A-Za-zÀ-ÿ0-9]/g, '').length > 2) restes.push(reste);
+  }
+  return { coordonnees: c, restes };
 }
 
 // ---------------------------------------------------------------------------

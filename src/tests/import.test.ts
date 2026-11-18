@@ -4,7 +4,8 @@ import { reconstruireLignes, retirerEntetesEtPieds, trouverGouttiere, type Morce
 import { ligneVide, nettoyerLigne } from '../lib/import/nettoyage';
 import { lignesDepuisTexte } from '../lib/import/lireDocx';
 import { decouperCv, detecterTitre, extraireDates, recollerParagraphes, separerNom } from '../lib/import/decouperSections';
-import { classerFragment, cvDepuisImport } from '../lib/import/classer';
+import { classerFragment, classerLignes, cvDepuisImport, libelleDestination } from '../lib/import/classer';
+import { LIBELLES_SECTIONS } from '../data/constantes';
 
 /** Fabrique un morceau de texte positionné (y décroissant = vers le bas de la page) */
 const m = (texte: string, x: number, y: number, taille = 10): Morceau => ({ texte, x, y, largeur: texte.length * taille * 0.5, taille });
@@ -651,5 +652,50 @@ describe('CV généré par une IA (Word / Docs) : tableaux, pieds de page, en-t�
       ['Fortinet Certified Professional (FCP) — Network Security', 'Fortinet', '2025'],
       ['Cisco Certified Network Associate (CCNA)', 'Cisco', '2022'],
     ]);
+  });
+});
+
+describe('classer un texte vers les infos perso (sous-rubriques)', () => {
+  const fragment = (texte: string) => [{ id: 'f', texte, sectionDetectee: null }];
+  const vide = () => cvDepuisImport({ donnees: decouperCv([]).donnees, aClasser: [], bilan: decouperCv([]).bilan }).donnees;
+
+  it('prénom et nom, titre, ville (étiquette retirée), date de naissance', () => {
+    const d = vide();
+    classerLignes(d, fragment('Camille MARTIN'), 'f', [], 'infos.nomComplet');
+    classerLignes(d, fragment('Poste visé : Analyste SOC'), 'f', [], 'infos.titre');
+    classerLignes(d, fragment('Localisation : Lyon (69)'), 'f', [], 'infos.ville');
+    classerLignes(d, fragment('Née le 12/03/2003'), 'f', [], 'infos.dateNaissance');
+    expect(d.infosPerso).toMatchObject({ prenom: 'Camille', nom: 'MARTIN', titre: 'Analyste SOC', ville: 'Lyon (69)', dateNaissance: 'Née le 12/03/2003' });
+  });
+
+  it('email, téléphone, LinkedIn : la valeur reconnue est extraite du texte', () => {
+    const d = vide();
+    classerLignes(d, fragment('Contact : camille@mail.fr (réponse sous 48 h)'), 'f', [], 'infos.email');
+    classerLignes(d, fragment('Tél. 06 12 34 56 78'), 'f', [], 'infos.telephone');
+    classerLignes(d, fragment('https://www.linkedin.com/in/camille-m'), 'f', [], 'infos.linkedin');
+    expect(d.infosPerso).toMatchObject({ email: 'camille@mail.fr', telephone: '06 12 34 56 78', linkedin: 'linkedin.com/in/camille-m' });
+  });
+
+  it('seulement les lignes cochées ; le reste du texte reste à classer', () => {
+    const d = vide();
+    const reste = classerLignes(d, fragment('Bondy (93140)\nPermis B\nRythme : 3 j entreprise / 2 j école'), 'f', [0], 'infos.ville');
+    expect(d.infosPerso.ville).toBe('Bondy (93140)');
+    expect(reste[0].texte).toBe('Permis B\nRythme : 3 j entreprise / 2 j école');
+    const fin = classerLignes(d, reste, 'f', [1], 'infos.rythmeAlternance');
+    expect(d.rythmeAlternance).toBe('3 j entreprise / 2 j école');
+    expect(fin[0].texte).toBe('Permis B');
+  });
+
+  it('détection automatique : remplit ce qu’elle reconnaît, garde le reste à classer', () => {
+    const d = vide();
+    const reste = classerLignes(d, fragment('camille@mail.fr | 06 12 34 56 78\nNée le 12/03/2003\nPermis B, véhiculée'), 'f', [], 'infos.auto');
+    expect(d.infosPerso).toMatchObject({ email: 'camille@mail.fr', telephone: '06 12 34 56 78', dateNaissance: 'Née le 12/03/2003' });
+    expect(reste).toHaveLength(1);
+    expect(reste[0].texte).toBe('Permis B, véhiculée');
+  });
+
+  it('libellé lisible pour l’interface', () => {
+    expect(libelleDestination('infos.dateNaissance', LIBELLES_SECTIONS)).toBe('Infos perso › Date de naissance');
+    expect(libelleDestination('competences', LIBELLES_SECTIONS)).toBe(LIBELLES_SECTIONS.competences);
   });
 });
