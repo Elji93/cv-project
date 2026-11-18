@@ -9,7 +9,8 @@ import { useAppStore, useCvActif } from '../../store/useAppStore';
 import { analyserCv, suggestionsReserve } from '../../lib/ats/scoring';
 import { promptAudit } from '../../lib/ats/promptIA';
 import { detecterLangue } from '../../lib/ats/normalisation';
-import { nomComplet, uid } from '../../lib/cv';
+import { nomComplet } from '../../lib/cv';
+import { ajouterMotsCles, motAjoute, retirerMotCle } from '../../lib/ats/ajoutsCv';
 import { useMesurePage } from '../../lib/mesurePage';
 import { Feuille } from '../feuille/Feuille';
 import { CarteScore } from './CarteScore';
@@ -61,16 +62,15 @@ export function Analyseur() {
   const ajouter = (surCopie: boolean) => {
     if (!coches.length) return;
     const appliquer = (c: typeof cv) => {
-      let g = c.donnees.competences.find(s => /cl[ée]s|offre|key/i.test(s.categorie));
-      if (!g) { g = { id: uid(), categorie: 'Compétences clés', elements: [] }; c.donnees.competences.unshift(g); }
-      g.elements = [...g.elements, ...coches.filter(k => !g!.elements.includes(k))];
-      c.sectionsMasquees = c.sectionsMasquees.filter(h => h !== 'competences');
+      ajouterMotsCles(c, coches);
       if (surCopie && r?.intitule) c.donnees.infosPerso.titre = r.intitule;
     };
     if (surCopie) modifierCv(appliquer, dupliquer(cv.id, `${cv.nom} — ${(r?.intitule || 'offre').slice(0, 40)}`));
     else modifierCv(appliquer);
     setCoches([]);
   };
+  /** Décocher un mot-clé ajouté le retire du CV */
+  const retirer = (termes: string[]) => modifierCv(c => retirerMotCle(c, termes));
 
   const naviguer = useNavigate();
   /** Enregistre la candidature dans le suivi (avec le score), et en option crée la lettre */
@@ -101,7 +101,7 @@ export function Analyseur() {
       <h1 className="text-2xl font-bold flex items-center gap-2"><Target className="text-brand-2" /> Analyseur & score ATS</h1>
       <p className="text-gray-500 mt-1 mb-5 max-w-3xl">Collez l'offre : votre CV est noté sur 100 selon les critères de tri recommandés par l'APEC. Les synonymes français ↔ anglais sont reconnus. Le score se met à jour en direct. Tout est calculé dans votre navigateur.</p>
 
-      <div className="grid lg:grid-cols-[1.3fr_1fr] gap-4 mb-4">
+      <div className="grid lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)] gap-4 mb-4">
         <div className="card">
           <div className="grid sm:grid-cols-2 gap-2 mb-2">
             <label className="flex flex-col gap-1"><span className="text-xs font-semibold text-gray-500">CV analysé</span>
@@ -129,8 +129,8 @@ export function Analyseur() {
       </div>
 
       {r && (
-        <div className="grid lg:grid-cols-[1.3fr_1fr] gap-4">
-          <div className="flex flex-col gap-4">
+        <div className="grid lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)] gap-4">
+          <div className="flex flex-col gap-4 min-w-0">
             <div className="card">
               <h3 className="font-semibold mb-3 flex items-center gap-1.5"><Lightbulb size={16} className="text-amber-500" /> Conseils pour améliorer votre score</h3>
               <ul className="divide-y divide-gray-100">
@@ -177,8 +177,9 @@ export function Analyseur() {
               <p className="text-xs text-gray-500 mb-3">
                 <span className="text-emerald-700">Vert</span> : trouvé (pointillés = seulement dans les expériences) ·
                 <span className="text-red-700"> rouge</span> : manquant · <span className="text-amber-700">orange</span> : manquant mais seulement « apprécié ».
+                {' '}Les mots ajoutés depuis cette liste restent cochés : <b>décochez-en un pour le retirer du CV</b>.
               </p>
-              <ListeMotsCles motsCles={r.motsCles} coches={coches} onCocher={basculer} />
+              <ListeMotsCles motsCles={r.motsCles} coches={coches} onCocher={basculer} estAjoute={k => motAjoute(cv, k.termes)} onRetirer={k => retirer(k.termes)} />
               {r.motsCles.some(k => k.ou === 'absent') && (
                 <div className="mt-3 rounded-lg bg-sky-50 border border-sky-200 p-3 text-[13px]">
                   Cochez les mots-clés manquants <b>que vous maîtrisez réellement</b> ({coches.length} sélectionné{coches.length > 1 ? 's' : ''}), puis :

@@ -73,7 +73,7 @@ Collez l'offre : le CV est noté sur 100 et le score se met à jour en direct.
 
 ### Booster votre candidature (certifications et leviers)
 Une carte dans l'analyseur et dans l'onglet Certifications de l'éditeur :
-- **Métier détecté** dans l'offre, ou dans le CV sans offre. Vous pouvez aussi en choisir un autre parmi : cybersécurité, réseaux & systèmes, support, cloud & DevOps, développement, data & BI, gestion de projet, finance & audit, RH / paie / SIRH, commerce, marketing & communication, achats & supply chain, industrie & qualité, BTP, santé & social, juridique, assistanat, hôtellerie & tourisme, enseignement & formation, plus un onglet « pour tous les profils » (TOEIC, TOSA, Pix, Voltaire).
+- **Métier détecté** dans l'offre, ou dans le CV sans offre. Une liste déroulante permet d’en cocher **plusieurs à la fois** (une rubrique par métier, les certifications communes comme le SST n’apparaissant qu’une fois) parmi : cybersécurité, réseaux & systèmes, support, cloud & DevOps, développement, data & BI, gestion de projet, finance & audit, RH / paie / SIRH, commerce, marketing & communication, achats & supply chain, industrie & qualité, BTP, santé & social, juridique, assistanat, hôtellerie & tourisme, enseignement & formation, plus un onglet « pour tous les profils » (TOEIC, TOSA, Pix, Voltaire).
 - **Certifications recommandées** : organisme, niveau (débutant, intermédiaire, expérimenté), mention « gratuit » (SecNumacadémie, NetAcad, MOOC CNIL…), et repères « Sur votre CV » ou « Citée dans l'offre ».
 - **Bouton + En cours** : ajoute la certification au CV avec la mention « En cours ».
 - **Profil junior** (moins de 3 ans d'expérience) : les certifications pour profils expérimentés (CISSP, OSCP, PMP…) sont repliées.
@@ -195,6 +195,7 @@ npm test
 - **Autres secteurs** (`secteurs`) :
   - une offre type par secteur (commerce, marketing, supply chain, qualité, BTP, santé, juridique, assistanat, hôtellerie, formation) : métier détecté et mots-clés reconnus ;
   - intitulés équivalents (« Sales representative » = « Commercial terrain ») ;
+  - carte « Booster » (`booster`) : liste déroulante à choix multiples, sans doublon de certification ;
   - aucun terme en double ni ambigu, CV finance et informatique non reclassés, « œ » lu comme « oe ».
 - **Le reste** : données et migrations (`etape1`), modèles (`etape2`), export Word (`etape4`), lettre et suivi (`etape6`), raccourcis clavier (`etape7`).
 
