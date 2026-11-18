@@ -8,6 +8,7 @@
 //  ou demandée dans l'offre). Les accents et majuscules n'ont pas d'importance.
 //  Aucun prix n'est indiqué : ils changent souvent. « gratuit » seulement quand c'est le cas.
 // ============================================================================
+import { PARCOURS_SECTEURS } from './parcoursSecteurs';
 
 export type NiveauCertif = 'debutant' | 'intermediaire' | 'avance';
 
@@ -363,6 +364,8 @@ export const PARCOURS: Parcours[] = [
       'Pour le SIRH : décrivez un projet (paramétrage, recette, reprise de données, formation des utilisateurs) avec un résultat mesurable.',
     ],
   },
+  // Commerce, marketing, supply chain, industrie, BTP, santé, juridique, assistanat, hôtellerie, formation
+  ...PARCOURS_SECTEURS,
 ];
 
 // ---------------------------------------------------------------------------

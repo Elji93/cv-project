@@ -7,7 +7,7 @@ export function promptAudit(cv: CV, offre: string, r: ResultatAts): string {
   const exiges = manquants.filter(k => k.priorite === 'obligatoire').map(k => k.termeOffre);
   const autres = manquants.filter(k => k.priorite !== 'obligatoire').map(k => k.termeOffre);
   const synonymes = r.motsCles.filter(k => k.viaSynonyme).map(k => `${k.termeOffre} ↔ ${k.termeCv}`);
-  return `Tu es un recruteur expert (finance, audit, conseil, RH / paie / SIRH) et un spécialiste de l'optimisation de CV pour les ATS.
+  return `Tu es un recruteur expert du secteur visé par l'offre ci-dessous et un spécialiste de l'optimisation de CV pour les ATS.
 
 ## Mission
 Audite mon CV au regard de l'offre ci-dessous en appliquant les critères de filtrage ATS recommandés par l'APEC, puis propose une version réécrite.

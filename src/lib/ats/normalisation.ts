@@ -24,7 +24,8 @@ export function singulier(mot: string): string {
 
 /** Liste des mots normalisés d'un texte */
 export function mots(texte: string): string[] {
-  const t = sansAccents(String(texte || '').toLowerCase()).replace(/[’']/g, ' ');
+  // « œ » et « æ » ne se décomposent pas : « gros œuvre » -> « gros oeuvre »
+  const t = sansAccents(String(texte || '').toLowerCase()).replace(/œ/g, 'oe').replace(/æ/g, 'ae').replace(/[’']/g, ' ');
   return (t.match(MOT) ?? []).map(singulier);
 }
 
@@ -74,7 +75,8 @@ export function regexSurlignage(terme: string): RegExp | null {
   const liste = mots(terme);
   if (!liste.length || liste.join('').length < 2) return null;
   const motif = liste.map(m => {
-    const lettres = [...m].map(c => (VARIANTES[c] ? `[${VARIANTES[c]}]` : echapper(c))).join('');
+    // « oe » retrouve aussi « œ » dans le texte d'origine
+    const lettres = m.split('oe').map(p => [...p].map(c => (VARIANTES[c] ? `[${VARIANTES[c]}]` : echapper(c))).join('')).join('(?:oe|œ)');
     return `${lettres}(?:e?s|x)?`;
   }).join(`[\\s\\-'’]+(?:(?:d|l)['’])?`);
   return new RegExp(`(?<![\\p{L}\\p{N}])${motif}(?![\\p{L}\\p{N}])`, 'giu');

@@ -1,6 +1,6 @@
 # CV Studio
 
-Application web pour créer des **CV d'une page A4, compatibles ATS**, pour la finance (audit, M&A, contrôle de gestion…), les métiers RH / paie / SIRH et l'informatique (cybersécurité, réseaux et systèmes, cloud, développement, data).
+Application web pour créer des **CV d'une page A4, compatibles ATS**, pour tous les secteurs : finance (audit, M&A, contrôle de gestion…), RH / paie / SIRH, informatique (cybersécurité, réseaux et systèmes, cloud, développement, data), commerce et relation client, marketing et communication, achats et supply chain, industrie, qualité et HSE, BTP, santé et social, juridique, assistanat, hôtellerie-restauration et tourisme, enseignement et formation.
 Elle comprend aussi un **analyseur de score ATS** (critères de l'APEC), un éditeur de **lettre de motivation** et un **suivi des candidatures**.
 
 100 % dans le navigateur (React + Vite + TypeScript + Tailwind CSS), hébergeable gratuitement sur **GitHub Pages**. Aucune donnée n'est envoyée sur internet : tout reste dans le `localStorage` du navigateur.
@@ -57,7 +57,7 @@ Collez l'offre : le CV est noté sur 100 et le score se met à jour en direct.
 | Conformité ATS | 15 | Pas d'émoji ni de symbole décoratif, intitulés de sections standards, coordonnées complètes, une seule page, une seule colonne |
 
 - **Normalisation** : accents, majuscules et pluriels sont ignorés. Les termes techniques restent intacts (M&A, P&L, C++, S/4HANA).
-- **Dictionnaire bilingue** : environ 230 notions (finance, RH / paie / SIRH, informatique, cybersécurité, réseaux, cloud, data) et 35 intitulés de postes. Une offre en anglais (« financial modeling ») valide donc un CV en français (« modélisation financière »).
+- **Dictionnaire bilingue** : environ 470 notions (dont une centaine de certifications) couvrant tous les secteurs ci-dessus, et près de 80 familles d'intitulés de postes (formes masculine, féminine et anglaise). Une offre en anglais (« financial modeling ») valide donc un CV en français (« modélisation financière »).
 - **Langue de l'offre** détectée automatiquement.
 - **Exigé ou apprécié** : déduit de la phrase (« required », « maîtrise de », « un plus », « nice to have »…) et des intertitres de l'offre (« Profil recherché », « Requirements », « Atouts »…).
 - **Restitution** :
@@ -73,13 +73,13 @@ Collez l'offre : le CV est noté sur 100 et le score se met à jour en direct.
 
 ### Booster votre candidature (certifications et leviers)
 Une carte dans l'analyseur et dans l'onglet Certifications de l'éditeur :
-- **Métier détecté** dans l'offre, ou dans le CV sans offre. Vous pouvez aussi en choisir un autre parmi : cybersécurité, réseaux & systèmes, support, cloud & DevOps, développement, data & BI, gestion de projet, finance & audit, RH / paie / SIRH, plus un onglet « pour tous les profils » (TOEIC, TOSA, Pix, Voltaire).
+- **Métier détecté** dans l'offre, ou dans le CV sans offre. Vous pouvez aussi en choisir un autre parmi : cybersécurité, réseaux & systèmes, support, cloud & DevOps, développement, data & BI, gestion de projet, finance & audit, RH / paie / SIRH, commerce, marketing & communication, achats & supply chain, industrie & qualité, BTP, santé & social, juridique, assistanat, hôtellerie & tourisme, enseignement & formation, plus un onglet « pour tous les profils » (TOEIC, TOSA, Pix, Voltaire).
 - **Certifications recommandées** : organisme, niveau (débutant, intermédiaire, expérimenté), mention « gratuit » (SecNumacadémie, NetAcad, MOOC CNIL…), et repères « Sur votre CV » ou « Citée dans l'offre ».
 - **Bouton + En cours** : ajoute la certification au CV avec la mention « En cours ».
 - **Profil junior** (moins de 3 ans d'expérience) : les certifications pour profils expérimentés (CISSP, OSCP, PMP…) sont repliées.
 - **Autres leviers par métier** : home lab, CTF, portfolio GitHub, chiffres à mettre en avant, veille…
 - **Lien avec le score ATS** : les certifications sont aussi des mots-clés. Une certification exigée par l'offre et absente du CV déclenche un conseil prioritaire.
-- **Pour enrichir** : complétez [`src/data/certifications.ts`](src/data/certifications.ts), où chaque certification a un nom, un organisme, un niveau, une note et ses façons de l'écrire (`termes`).
+- **Pour enrichir** : complétez [`src/data/certifications.ts`](src/data/certifications.ts) (finance, RH, informatique) ou [`src/data/parcoursSecteurs.ts`](src/data/parcoursSecteurs.ts) (autres secteurs), où chaque certification a un nom, un organisme, un niveau, une note et ses façons de l'écrire (`termes`).
 
 ### Lettre de motivation
 - Reprend l'en-tête (nom, titre, coordonnées), la police, la couleur et le modèle du CV relié.
@@ -115,7 +115,7 @@ Une carte dans l'analyseur et dans l'onglet Certifications de l'éditeur :
 
 ## Enrichir le dictionnaire de synonymes
 
-Le dictionnaire est dans [`src/data/synonymes.ts`](src/data/synonymes.ts). Chaque groupe réunit toutes les façons d'écrire **la même notion**, en français, en anglais et en acronyme :
+Le dictionnaire est dans [`src/data/synonymes.ts`](src/data/synonymes.ts) (finance, RH, informatique) et [`src/data/secteurs.ts`](src/data/secteurs.ts) (autres secteurs, savoir-être et outils communs). Chaque groupe réunit toutes les façons d'écrire **la même notion**, en français, en anglais et en acronyme :
 
 ```ts
 { libelle: 'Paie', categorie: 'Domaine', termes: ['paie', 'payroll'] },
@@ -123,14 +123,14 @@ Le dictionnaire est dans [`src/data/synonymes.ts`](src/data/synonymes.ts). Chaqu
 
 - **Ajouter un synonyme** : ajoutez-le dans `termes` du groupe existant, par exemple `'gestion de la paie'`.
 - **Ajouter une notion** : ajoutez un groupe. `libelle` est le nom affiché. `categorie` vaut `'Domaine'`, `'Technique'`, `'Outil'`, `'Certification'`, `'Langue'` ou `'Savoir-être'` : la catégorie `'Outil'` déclenche le conseil « indiquez votre niveau ».
-- **Ajouter un intitulé de poste** (critère « titre », 20 points) : complétez `INTITULES_POSTES`, en bas du même fichier. Mettez-y les formes masculine, féminine et anglaise.
+- **Ajouter un intitulé de poste** (critère « titre », 20 points) : complétez `INTITULES_POSTES` (en bas de `synonymes.ts`) ou `INTITULES_SECTEURS` (dans `secteurs.ts`). Mettez-y les formes masculine, féminine et anglaise.
 - **Règles d'écriture** :
   - inutile d'écrire les accents, les majuscules ou les pluriels, ils sont ignorés ;
   - les termes de plusieurs mots sont cherchés dans l'ordre (« audit interne ») ;
   - évitez les termes trop courts ou ambigus (un acronyme de 2 lettres peut apparaître par hasard).
-- **Mots à double sens** : évitez-les aussi. Par exemple « exchange » (marchés financiers), « sauvegarde » (« plan de sauvegarde de l'emploi »), « procédures », « https » (présent dans les liens du CV) : écrivez plutôt l'expression complète (« microsoft exchange », « sauvegarde des données »).
+- **Mots à double sens** : évitez-les aussi. Par exemple « exchange » (marchés financiers), « sauvegarde » (« plan de sauvegarde de l'emploi »), « procédures », « https » (présent dans les liens du CV) : écrivez plutôt l'expression complète (« microsoft exchange », « sauvegarde des données »). De même, « formation », « qualité », « stock », « transport », « restauration » ou « closing » ne sont jamais utilisés seuls.
 - **Signe collé** : un terme avec un signe s'écrit sans espace (« security+ », « c++ »). Sinon, il se réduit au mot seul.
-- **Vérifier** : lancez `npm test`, puis testez une offre dans l'analyseur.
+- **Vérifier** : lancez `npm test` (un test refuse les termes en double entre deux groupes et les sigles de 2 lettres dans `secteurs.ts`), puis testez une offre dans l'analyseur.
 
 Sans toucher au code, chacun peut aussi ajouter ses équivalences dans l'analyseur (**Mes équivalences**).
 
@@ -160,7 +160,8 @@ src/
   store/            état global zustand, annuler / rétablir, sauvegarde auto, migrations,
                     fenêtres de dialogue, zone d'impression
   data/             CV exemple, constantes, intitulés de sections FR/EN,
-                    synonymes.ts (dictionnaire ATS), certifications.ts (recommandations),
+                    synonymes.ts + secteurs.ts (dictionnaire ATS),
+                    certifications.ts + parcoursSecteurs.ts (recommandations),
                     mots vides, verbes d'action
   lib/              logique sans React
     ats/            normalisation, extraction des mots-clés, scoring APEC, conseils, prompt IA,
@@ -191,6 +192,10 @@ npm test
   - SOC / SIEM / EDR ;
   - absence de faux positifs dans les offres finance et RH ;
   - détection du métier et recommandations de certifications.
+- **Autres secteurs** (`secteurs`) :
+  - une offre type par secteur (commerce, marketing, supply chain, qualité, BTP, santé, juridique, assistanat, hôtellerie, formation) : métier détecté et mots-clés reconnus ;
+  - intitulés équivalents (« Sales representative » = « Commercial terrain ») ;
+  - aucun terme en double ni ambigu, CV finance et informatique non reclassés, « œ » lu comme « oe ».
 - **Le reste** : données et migrations (`etape1`), modèles (`etape2`), export Word (`etape4`), lettre et suivi (`etape6`), raccourcis clavier (`etape7`).
 
 ## Données

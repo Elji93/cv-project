@@ -9,6 +9,7 @@
 // ============================================================================
 
 import { PARCOURS, TRANSVERSAL } from './certifications';
+import { INTITULES_SECTEURS, SYNONYMES_SECTEURS } from './secteurs';
 
 export type CategorieMotCle = 'Domaine' | 'Technique' | 'Outil' | 'Certification' | 'Langue' | 'Savoir-être';
 
@@ -274,6 +275,8 @@ export const SYNONYMES: GroupeSynonymes[] = [
   { libelle: 'Oracle Database / SQL Server', categorie: 'Outil', termes: ['sql server', 'microsoft sql server', 'oracle database', 'pl/sql', 't-sql', 'mariadb', 'mongodb', 'redis'] },
   { libelle: 'Databricks / Snowflake / Spark', categorie: 'Outil', termes: ['databricks', 'snowflake', 'spark', 'apache spark', 'pyspark', 'hadoop', 'bigquery', 'dbt'] },
   { libelle: 'Jira / Confluence', categorie: 'Outil', termes: ['jira', 'confluence', 'trello', 'ms project', 'microsoft project'] },
+  // Autres secteurs : commerce, marketing, supply chain, industrie, BTP, santé, juridique… (secteurs.ts)
+  ...SYNONYMES_SECTEURS,
 ];
 
 // Les certifications recommandées (certifications.ts) deviennent aussi des mots-clés ATS,
@@ -326,4 +329,6 @@ export const INTITULES_POSTES: { libelle: string; termes: string[] }[] = [
   { libelle: 'Data engineer / scientist', termes: ['data engineer', 'ingenieur data', 'ingenieure data', 'ingenieur de donnees', 'data scientist', 'machine learning engineer', 'ml engineer'] },
   { libelle: 'Chef de projet informatique', termes: ['chef de projet informatique', 'cheffe de projet informatique', 'chef de projet it', 'it project manager', 'chef de projet si', 'chef de projet technique', 'cheffe de projet technique', 'technical project manager', 'chef de projet moa', 'chef de projet amoa', 'product owner', 'scrum master'] },
   { libelle: 'DSI / responsable informatique', termes: ['dsi', 'directeur des systemes d information', 'directrice des systemes d information', 'cio', 'responsable informatique', 'it manager', 'responsable infrastructure', 'head of it'] },
+  // Autres secteurs (secteurs.ts)
+  ...INTITULES_SECTEURS,
 ];
