@@ -25,7 +25,7 @@ export function ZoneAClasser() {
           <p className="text-[11.5px] text-amber-900">Cochez les lignes qui vont ensemble (ex. un poste, son entreprise, ses dates et ses puces), puis choisissez la section. Vérifiez ensuite le résultat sur la feuille.</p>
           {cv.aClasser.map(f => (
             <FragmentACocher key={f.id + f.texte.length} fragment={f}
-              onEnvoyer={(lignes, section) => modifier(c => classerSelection(c, f.id, lignes, section))} />
+              donnees={cv.donnees} onEnvoyer={(lignes, section) => modifier(c => classerSelection(c, f.id, lignes, section))} />
           ))}
         </div>
       )}

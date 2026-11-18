@@ -29,12 +29,14 @@ Elle comprend aussi un **analyseur de score ATS** (critères de l'APEC), un édi
   - ordre des sections par **glisser-déposer** ;
   - sections masquables et renommables.
 - **Photo** facultative : recadrage par glisser, zoom, forme carrée ou ronde.
+- **Réserve d'expériences et de formations** : tout reste en mémoire, une case « Sur le CV » choisit ce qui apparaît (feuille, PDF, Word, score ATS). L'analyseur signale les entrées en réserve qui correspondent à l'offre.
 - **Annuler / rétablir** (50 actions).
 - **Import d'un CV existant** (PDF, y compris Canva, ou Word .docx) :
   - le texte est réparti dans les sections ;
   - les colonnes latérales sont reconnues ;
   - la photo est extraite.
   - Un écran de vérification permet ensuite de corriger le résultat, et ce qui n'a pas pu être classé reste disponible dans « À classer ».
+  - Chaque texte (ou ligne du texte extrait) peut être envoyé vers une **sous-rubrique précise** : un champ des infos perso (nom, ville, date de naissance…), les missions, le poste ou les dates d'une expérience existante, l'école d'une formation, un groupe de compétences, ou une nouvelle entrée détectée automatiquement.
 
 ### Exports
 - **PDF** : la fenêtre d'impression du navigateur produit un PDF vectoriel, au texte sélectionnable. Une aide rappelle les bons réglages : *Enregistrer au format PDF*, A4, marges « Aucune », graphiques d'arrière-plan cochés.

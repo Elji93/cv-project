@@ -5,7 +5,7 @@
 // ============================================================================
 import { useState } from 'react';
 import { Trash2 } from 'lucide-react';
-import type { FragmentAClasser } from '../../types';
+import type { DonneesCV, FragmentAClasser } from '../../types';
 import type { Destination } from '../../lib/import/classer';
 import { LIBELLES_SECTIONS } from '../../data/constantes';
 import { ChoixSection } from './ChoixSection';
@@ -15,9 +15,11 @@ interface Props {
   fragment: FragmentAClasser;
   /** lignes = numéros des lignes cochées (vide = tout) ; section null = supprimer */
   onEnvoyer: (lignes: number[], section: Destination | null) => void;
+  /** Contenu du CV (pour proposer ses expériences, formations, groupes de compétences) */
+  donnees?: DonneesCV;
 }
 
-export function FragmentACocher({ fragment, onEnvoyer }: Props) {
+export function FragmentACocher({ fragment, onEnvoyer, donnees }: Props) {
   const lignes = fragment.texte.split('\n');
   const [cochees, setCochees] = useState<number[]>([]);
   const [dernier, setDernier] = useState<number | null>(null);
@@ -61,7 +63,7 @@ export function FragmentACocher({ fragment, onEnvoyer }: Props) {
         ))}
       </ul>
       <div className="flex items-center gap-1.5">
-        <ChoixSection valeur={null} onChange={s => s && envoyer(s)}
+        <ChoixSection valeur={null} donnees={donnees} onChange={s => s && envoyer(s)}
           libelleAucune={(cochees.length ? `Envoyer ${cochees.length} ligne${cochees.length > 1 ? 's' : ''} vers…` : 'Envoyer tout vers…') + suggestion} />
         <button className="icon-btn text-red-600" title={cochees.length ? 'Supprimer les lignes cochées' : 'Supprimer ce texte'} aria-label="Supprimer"
           onClick={async () => { if (await confirmer({ titre: cochees.length ? 'Supprimer les lignes cochées ?' : 'Supprimer tout ce texte ?', message: 'Ctrl+Z pour annuler.', libelleOk: 'Supprimer', danger: true })) envoyer(null); }}>

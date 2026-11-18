@@ -4,7 +4,7 @@
 // ============================================================================
 import { forwardRef, type ReactNode } from 'react';
 import type { CleSection, CV, Experience, Formation } from '../../types';
-import { decouperListe, puce, titreSection } from '../../lib/cv';
+import { affichees, decouperListe, puce, titreSection } from '../../lib/cv';
 import { formaterDate, formaterPeriode, lireDate, estEnCours } from '../../lib/dates';
 import { NIVEAUX_CECRL } from '../../data/constantes';
 import { ChampEditable, libererFocus, placerCurseur } from './ChampEditable';
@@ -122,7 +122,7 @@ export const Feuille = forwardRef<HTMLDivElement, Props>(function Feuille({ cv, 
         );
 
       case 'experiences': {
-        const liste = d.experiences.filter(e => edition || rempli(e.poste) || rempli(e.entreprise));
+        const liste = affichees(d.experiences).filter(e => edition || rempli(e.poste) || rempli(e.entreprise));
         if (!liste.length) return null;
         return liste.map(e => {
           const cherche = (c: CV) => c.donnees.experiences.find(x => x.id === e.id);
@@ -143,7 +143,7 @@ export const Feuille = forwardRef<HTMLDivElement, Props>(function Feuille({ cv, 
       }
 
       case 'formations': {
-        const liste = d.formations.filter(f => edition || rempli(f.diplome) || rempli(f.etablissement));
+        const liste = affichees(d.formations).filter(f => edition || rempli(f.diplome) || rempli(f.etablissement));
         if (!liste.length) return null;
         return liste.map(f => {
           const cherche = (c: CV) => c.donnees.formations.find(x => x.id === f.id);

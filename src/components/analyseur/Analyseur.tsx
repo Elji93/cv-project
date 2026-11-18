@@ -3,10 +3,10 @@
 //  l'offre ou le CV (y compris en ajoutant un mot-clé manquant).
 // ============================================================================
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ClipboardCopy, ClipboardList, Copy, Lightbulb, Mail, Plus, Send, Target } from 'lucide-react';
+import { Archive, ClipboardCopy, ClipboardList, Copy, Eye, Lightbulb, Mail, Plus, Send, Target } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAppStore, useCvActif } from '../../store/useAppStore';
-import { analyserCv } from '../../lib/ats/scoring';
+import { analyserCv, suggestionsReserve } from '../../lib/ats/scoring';
 import { promptAudit } from '../../lib/ats/promptIA';
 import { detecterLangue } from '../../lib/ats/normalisation';
 import { nomComplet, uid } from '../../lib/cv';
@@ -52,6 +52,8 @@ export function Analyseur() {
     () => (offreAnalysee.trim().length >= 80 ? analyserCv(cv, offreAnalysee, intitule, tient, perso) : null),
     [cv, offreAnalysee, intitule, tient, perso],
   );
+
+  const reserve = useMemo(() => (r ? suggestionsReserve(cv, r) : []), [cv, r]);
 
   const basculer = (t: string) => setCoches(l => (l.includes(t) ? l.filter(x => x !== t) : [...l, t]));
 
@@ -143,6 +145,31 @@ export function Analyseur() {
                 {!r.conseils.length && <li className="py-2 text-sm text-emerald-700">Excellent : aucun point bloquant détecté.</li>}
               </ul>
             </div>
+
+            {reserve.length > 0 && (
+              <div className="card border-sky-200">
+                <h3 className="font-semibold mb-1 flex items-center gap-1.5"><Archive size={16} className="text-brand-2" /> Dans votre réserve</h3>
+                <p className="text-xs text-gray-500 mb-2">Ces entrées sont gardées en mémoire mais absentes du CV. Elles contiennent des mots-clés de l'offre : remettez-les sur le CV si elles sont pertinentes.</p>
+                <ul className="divide-y divide-gray-100">
+                  {reserve.map(s => (
+                    <li key={s.id} className="flex items-start gap-2 py-2 text-sm">
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium">{s.type === 'experience' ? 'Expérience' : 'Formation'} : {s.libelle}</div>
+                        <div className="text-xs text-gray-600">
+                          {s.motsCles.slice(0, 8).join(', ')}{s.motsCles.length > 8 ? '…' : ''}
+                          {s.manquants > 0 && <span className="text-emerald-700 font-medium"> · {s.manquants} mot{s.manquants > 1 ? 's' : ''}-clé{s.manquants > 1 ? 's' : ''} absent{s.manquants > 1 ? 's' : ''} du CV actuel</span>}
+                        </div>
+                      </div>
+                      <button className="btn-sm shrink-0" onClick={() => modifierCv(c => {
+                        const liste: { id: string; masquee?: boolean }[] = s.type === 'experience' ? c.donnees.experiences : c.donnees.formations;
+                        const x = liste.find(y => y.id === s.id);
+                        if (x) x.masquee = false;
+                      })}><Eye size={13} /> Mettre sur le CV</button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
 
             <div className="card">
               <h3 className="font-semibold mb-1">Mots-clés de l'offre</h3>

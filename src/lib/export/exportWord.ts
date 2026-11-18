@@ -13,7 +13,7 @@ import {
 } from 'docx';
 import { saveAs } from 'file-saver';
 import type { CV, Experience, Formation } from '../../types';
-import { nomComplet, policeWord, titreSection } from '../cv';
+import { affichees, nomComplet, policeWord, titreSection } from '../cv';
 import { formaterPeriode } from '../dates';
 import { NIVEAUX_CECRL } from '../../data/constantes';
 import { photoRecadreePng } from '../photo';
@@ -117,11 +117,11 @@ export async function construireDocumentWord(cv: CV, avecPhoto = true): Promise<
         { avant: rempli(d.accroche) ? twipsMm(0.8) : 0 }));
     }
     if (cle === 'experiences') {
-      const l = d.experiences.filter(e => rempli(e.poste) || rempli(e.entreprise));
+      const l = affichees(d.experiences).filter(e => rempli(e.poste) || rempli(e.entreprise));
       l.forEach((e, i) => contenu.push(...bloc(e.entreprise, e.poste, e.ville, e, i === l.length - 1)));
     }
     if (cle === 'formations') {
-      const l = d.formations.filter(f => rempli(f.diplome) || rempli(f.etablissement));
+      const l = affichees(d.formations).filter(f => rempli(f.diplome) || rempli(f.etablissement));
       l.forEach((f, i) => contenu.push(...bloc(f.etablissement, f.diplome, f.ville, f, i === l.length - 1)));
     }
     if (cle === 'competences') {

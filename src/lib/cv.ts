@@ -90,3 +90,6 @@ export function decouperListe(texte: string, separateurs = /[,;]/): string[] {
 
 /** Ce CV vient-il d'un fichier importé ? (les anciens imports sont reconnus à leur nom) */
 export const estImporte = (cv: CV) => !!cv.importeLe || /^CV importé/i.test(cv.nom);
+
+/** Entrées affichées sur le CV (les entrées « en réserve » sont gardées en mémoire mais exclues) */
+export const affichees = <T extends { masquee?: boolean }>(liste: T[]): T[] => liste.filter(x => !x.masquee);

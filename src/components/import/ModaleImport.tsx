@@ -8,7 +8,7 @@ import { useAppStore } from '../../store/useAppStore';
 import { lirePdf, type ContenuImporte, type LigneImportee } from '../../lib/import/lirePdf';
 import { lireDocx, lignesDepuisTexte } from '../../lib/import/lireDocx';
 import { decouperCv, type ResultatImport } from '../../lib/import/decouperSections';
-import { ajouterTexte, classerLignes, cvDepuisImport, remplacerContenu, type ChampInfo, type Destination } from '../../lib/import/classer';
+import { ajouterTexte, classerLignes, cvDepuisImport, remplacerContenu, type Destination } from '../../lib/import/classer';
 import { Modale } from '../commun/Modale';
 import { confirmer } from '../../store/dialogues';
 import { EtapeChoixFichier } from './EtapeChoixFichier';
@@ -59,12 +59,12 @@ export function ModaleImport({ onFermer }: { onFermer: () => void }) {
     });
   };
 
-  /** Ligne du texte extrait attribuée à un champ des infos perso */
-  const attribuer = (texte: string, champ: ChampInfo) => {
+  /** Ligne du texte extrait recopiée vers un champ ou une rubrique */
+  const attribuer = (texte: string, destination: Destination) => {
     setResultat(r => {
       if (!r) return r;
       const donnees = structuredClone(r.donnees);
-      ajouterTexte(donnees, texte, `infos.${champ}`);
+      ajouterTexte(donnees, texte, destination);
       return { ...r, donnees };
     });
   };

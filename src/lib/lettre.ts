@@ -3,7 +3,7 @@
 //  et petites vérifications avant l'envoi.
 // ============================================================================
 import type { Candidature, CV, LettreMotivation, StatutCandidature } from '../types';
-import { maintenant, nomComplet, uid } from './cv';
+import { affichees, maintenant, nomComplet, uid } from './cv';
 
 const MOIS_FR = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
 const MOIS_EN = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
@@ -71,8 +71,8 @@ export function brouillonLettre(cv: CV, l: Pick<LettreMotivation, 'entreprise' |
   const d = cv.donnees;
   const ent = l.entreprise.trim() || '[nom de l’entreprise]';
   const poste = l.poste.trim() || d.infosPerso.titre.trim() || '[intitulé du poste]';
-  const exp = d.experiences[0];
-  const form = d.formations[0];
+  const exp = affichees(d.experiences)[0];
+  const form = affichees(d.formations)[0];
   const outils = d.competences.flatMap(g => g.elements).slice(0, 3).join(', ');
   if (cv.langue === 'en') {
     return [

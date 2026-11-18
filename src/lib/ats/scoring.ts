@@ -8,7 +8,7 @@ import { INTITULES_POSTES, type CategorieMotCle } from '../../data/synonymes';
 import { MOTS_VIDES } from '../../data/motsVides';
 import { VERBES_ACTION_EN, VERBES_ACTION_FR } from '../../data/verbesAction';
 import { NIVEAUX_CECRL } from '../../data/constantes';
-import { nomComplet, titreSection } from '../cv';
+import { affichees, nomComplet, titreSection } from '../cv';
 import { formaterPeriode } from '../dates';
 import { contient, detecterLangue, mots, normaliser, sansAccents } from './normalisation';
 import { dictionnaire, extraireMotsCles, type Priorite } from './extraction';
@@ -31,6 +31,8 @@ export interface MotCleResultat {
   ou: 'fort' | 'experience' | 'absent';
   priorite: Priorite;
   poids: number;
+  /** Toutes les façons d'écrire ce mot-clé (FR, EN, acronymes) */
+  termes: string[];
 }
 export interface Verification { libelle: string; ok: boolean }
 export interface Critere { id: 'titre' | 'motsCles' | 'impact' | 'conformite'; libelle: string; max: number; score: number; verifications: Verification[] }
@@ -99,11 +101,11 @@ export function texteBrutCv(cv: CV) {
     if (cle === 'accroche' && rempli(d.accroche)) sec.push(d.accroche);
     if (cle === 'accroche' && rempli(d.rythmeAlternance)) sec.push("Rythme d'alternance : " + d.rythmeAlternance);
     if (cle === 'qualites' && d.qualites.length) sec.push(d.qualites.join(', '));
-    if (cle === 'experiences') d.experiences.forEach(e => {
+    if (cle === 'experiences') affichees(d.experiences).forEach(e => {
       sec.push([e.entreprise, e.poste, e.ville, formaterPeriode(e.periode, cv.langue)].filter(rempli).join(' | '));
       e.puces.filter(x => rempli(x.texte)).forEach(x => sec.push('- ' + x.texte));
     });
-    if (cle === 'formations') d.formations.forEach(f => {
+    if (cle === 'formations') affichees(d.formations).forEach(f => {
       sec.push([f.etablissement, f.diplome, f.ville, formaterPeriode(f.periode, cv.langue)].filter(rempli).join(' | '));
       f.puces.filter(x => rempli(x.texte)).forEach(x => sec.push('- ' + x.texte));
     });
@@ -160,11 +162,11 @@ export function analyserCv(cv: CV, offre: string, intituleSaisi: string, tientSu
     visible('langues') ? d.langues.map(l => `${l.langue} ${NIVEAUX_CECRL.find(n => n.id === l.niveau)?.fr ?? ''} ${NIVEAUX_CECRL.find(n => n.id === l.niveau)?.en ?? ''} ${l.niveau} ${l.precision}`).join(' , ') : '',
   ].join(' , '));
   const zoneExperiences = normaliser([
-    visible('experiences') ? d.experiences.map(e => [e.poste, e.entreprise, ...e.puces.map(x => x.texte)].join(' , ')).join(' , ') : '',
-    visible('formations') ? d.formations.map(f => [f.diplome, f.etablissement, ...f.puces.map(x => x.texte)].join(' , ')).join(' , ') : '',
+    visible('experiences') ? affichees(d.experiences).map(e => [e.poste, e.entreprise, ...e.puces.map(x => x.texte)].join(' , ')).join(' , ') : '',
+    visible('formations') ? affichees(d.formations).map(f => [f.diplome, f.etablissement, ...f.puces.map(x => x.texte)].join(' , ')).join(' , ') : '',
     visible('centresInteret') ? d.centresInteret.join(' , ') : '',
   ].join(' , '));
-  const experiencesSeules = normaliser(visible('experiences') ? d.experiences.map(e => [e.poste, ...e.puces.map(x => x.texte)].join(' , ')).join(' , ') : '');
+  const experiencesSeules = normaliser(visible('experiences') ? affichees(d.experiences).map(e => [e.poste, ...e.puces.map(x => x.texte)].join(' , ')).join(' , ') : '');
 
   // ===== 1. Titre (20) =====
   const intitule = (intituleSaisi.trim() || devinerIntitule(offre)).trim();
@@ -178,7 +180,7 @@ export function analyserCv(cv: CV, offre: string, intituleSaisi: string, tientSu
     const exp = fort ? undefined : ordre.find(t => contient(zoneExperiences, t));
     const termeCv = fort ?? exp ?? '';
     return {
-      libelle: k.libelle, categorie: k.categorie, termeOffre: k.termeOffre, termeCv,
+      libelle: k.libelle, categorie: k.categorie, termeOffre: k.termeOffre, termes: k.termes, termeCv,
       viaSynonyme: !!termeCv && mots(termeCv).join(' ') !== mots(k.termeOffre).join(' '),
       ou: fort ? 'fort' : exp ? 'experience' : 'absent',
       priorite: k.priorite,
@@ -192,7 +194,7 @@ export function analyserCv(cv: CV, offre: string, intituleSaisi: string, tientSu
   const exiges = motsCles.filter(k => k.priorite === 'obligatoire');
 
   // ===== 3. Expériences & impact chiffré (25) =====
-  const experiences = visible('experiences') ? d.experiences.filter(e => rempli(e.entreprise) || rempli(e.poste)) : [];
+  const experiences = visible('experiences') ? affichees(d.experiences).filter(e => rempli(e.entreprise) || rempli(e.poste)) : [];
   const puces = experiences.flatMap(e => e.puces.map(x => x.texte).filter(rempli));
   const chiffrees = puces.filter(t => CHIFFRE.test(t));
   const avecVerbe = puces.filter(commenceParVerbe);
@@ -256,4 +258,37 @@ export function analyserCv(cv: CV, offre: string, intituleSaisi: string, tientSu
     puces, chiffrees: chiffrees.length, experiences,
   });
   return resultat;
+}
+
+// ---------------------------------------------------------------------------
+//  Réserve : expériences et formations gardées en mémoire mais absentes du CV,
+//  qui contiennent des mots-clés de l'offre (à remettre sur le CV ?)
+// ---------------------------------------------------------------------------
+export interface SuggestionReserve {
+  type: 'experience' | 'formation';
+  id: string;
+  libelle: string;
+  /** Mots-clés de l'offre trouvés dans cette entrée */
+  motsCles: string[];
+  /** Dont mots-clés absents du CV actuel */
+  manquants: number;
+}
+
+export function suggestionsReserve(cv: CV, r: ResultatAts): SuggestionReserve[] {
+  const metier = r.motsCles.filter(k => k.categorie !== 'Savoir-être');
+  const entrees = [
+    ...cv.donnees.experiences.filter(e => e.masquee).map(e => ({
+      type: 'experience' as const, id: e.id, libelle: [e.poste, e.entreprise].filter(rempli).join(' — ') || 'Expérience',
+      texte: [e.poste, e.entreprise, ...e.puces.map(p => p.texte)].join(' , '),
+    })),
+    ...cv.donnees.formations.filter(f => f.masquee).map(f => ({
+      type: 'formation' as const, id: f.id, libelle: [f.diplome, f.etablissement].filter(rempli).join(' — ') || 'Formation',
+      texte: [f.diplome, f.etablissement, ...f.puces.map(p => p.texte)].join(' , '),
+    })),
+  ];
+  return entrees.map(e => {
+    const n = normaliser(e.texte);
+    const trouves = metier.filter(k => k.termes.some(t => contient(n, t)));
+    return { type: e.type, id: e.id, libelle: e.libelle, motsCles: trouves.map(k => k.termeOffre), manquants: trouves.filter(k => k.ou === 'absent').length };
+  }).filter(s => s.motsCles.length > 0).sort((a, b) => b.manquants - a.manquants || b.motsCles.length - a.motsCles.length);
 }

@@ -4,7 +4,8 @@ import { useState } from 'react';
 import type { InfosPerso, Photo } from '../../types';
 import { calculerBilan, type ResultatImport } from '../../lib/import/decouperSections';
 import type { LigneImportee } from '../../lib/import/lirePdf';
-import { CHAMPS_INFOS, pointsACompleter, type ChampInfo, type Destination } from '../../lib/import/classer';
+import { pointsACompleter, type Destination } from '../../lib/import/classer';
+import { ChoixSection } from './ChoixSection';
 import { formaterPeriode } from '../../lib/dates';
 import { LIBELLES_SECTIONS, ORDRE_PAR_DEFAUT } from '../../data/constantes';
 import { FragmentACocher } from './FragmentACocher';
@@ -15,8 +16,8 @@ interface Props {
   /** Envoie des lignes d'un texte « À classer » vers une section (null = supprimer) */
   onClasser: (fragmentId: string, lignes: number[], section: Destination | null) => void;
   onInfo: (k: Exclude<keyof InfosPerso, 'photo'>, v: string) => void;
-  /** Attribue une ligne du texte extrait à un champ des infos perso (la ligne reste où elle est) */
-  onAttribuer: (texte: string, champ: ChampInfo) => void;
+  /** Recopie une ligne du texte extrait vers un champ ou une rubrique (la ligne reste aussi où elle est) */
+  onAttribuer: (texte: string, destination: Destination) => void;
   onPhoto: (p: Photo | null) => void;
 }
 
@@ -63,15 +64,12 @@ export function EtapeVerification({ lignes, resultat, onClasser, onInfo, onAttri
         {ligneChoisie !== null && lignes[ligneChoisie] && (
           <div className="mt-2 rounded-lg border border-sky-200 bg-sky-50 p-2 text-xs">
             <p className="mb-1.5 text-gray-700">Ligne choisie : <b className="break-words">« {lignes[ligneChoisie].texte} »</b></p>
-            <select className="input py-1 text-xs" value="" aria-label="Attribuer la ligne à un champ des infos perso"
-              onChange={e => { if (e.target.value) { onAttribuer(lignes[ligneChoisie].texte, e.target.value as ChampInfo); setLigneChoisie(null); } }}>
-              <option value="">Attribuer à… (infos perso)</option>
-              {CHAMPS_INFOS.map(([c, libelle]) => <option key={c} value={c}>→ {libelle}</option>)}
-            </select>
-            <p className="mt-1 text-[11px] text-gray-500">La ligne est recopiée dans le champ choisi ; corrigez ensuite si besoin dans « Informations personnelles ».</p>
+            <ChoixSection valeur={null} donnees={d} libelleAucune="Attribuer à…" ariaLabel="Attribuer la ligne à un champ ou une rubrique"
+              onChange={dest => { if (dest) { onAttribuer(lignes[ligneChoisie].texte, dest); setLigneChoisie(null); } }} />
+            <p className="mt-1 text-[11px] text-gray-500">La ligne est recopiée à l'endroit choisi (infos perso, mission d'une expérience, dates d'une formation…). Vérifiez ensuite le résultat à droite.</p>
           </div>
         )}
-        {ligneChoisie === null && <p className="text-[11px] text-gray-500 mt-1">Astuce : cliquez sur une ligne pour l'attribuer à un champ (ville, date de naissance, nom…).</p>}
+        {ligneChoisie === null && <p className="text-[11px] text-gray-500 mt-1">Astuce : cliquez sur une ligne pour l'attribuer à un champ (ville, date de naissance, dates ou missions d'une expérience…).</p>}
         {lignes.some(l => l.zone !== 'pleine') && <p className="text-[11px] text-gray-500 mt-1">Mise en page en 2 colonnes détectée : la colonne de gauche (en bleu) est lue en premier.</p>}
       </div>
 
@@ -145,7 +143,7 @@ export function EtapeVerification({ lignes, resultat, onClasser, onInfo, onAttri
             <p className="text-[11.5px] text-gray-500 mb-2">Cochez les lignes qui vont ensemble puis choisissez leur section (le bilan ci-dessus se met à jour). Ce que vous laissez ici restera « à classer » dans l'éditeur.</p>
             <div className="space-y-2 mb-4">
               {resultat.aClasser.map(f => (
-                <FragmentACocher key={f.id + f.texte.length} fragment={f} onEnvoyer={(l, s) => onClasser(f.id, l, s)} />
+                <FragmentACocher key={f.id + f.texte.length} fragment={f} donnees={d} onEnvoyer={(l, s) => onClasser(f.id, l, s)} />
               ))}
             </div>
           </>

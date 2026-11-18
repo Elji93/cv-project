@@ -72,6 +72,8 @@ export interface Experience {
   ville: string;
   periode: Periode;
   puces: Puce[];
+  /** En réserve : gardée en mémoire mais absente du CV (feuille, PDF, Word, score ATS) */
+  masquee?: boolean;
 }
 
 export interface Formation {
@@ -82,6 +84,8 @@ export interface Formation {
   periode: Periode;
   /** Mention, cours, mémoire… */
   puces: Puce[];
+  /** En réserve : gardée en mémoire mais absente du CV */
+  masquee?: boolean;
 }
 
 /** Un groupe de compétences, ex. « Outils » : Excel, SAP, Power BI */

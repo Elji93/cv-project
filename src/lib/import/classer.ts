@@ -3,9 +3,9 @@
 //  liste des points à compléter
 // ============================================================================
 import type { CleSection, CV, DonneesCV, FragmentAClasser, InfosPerso } from '../../types';
-import { cvVierge, uid } from '../cv';
+import { cvVierge, puce, uid } from '../cv';
 import { lignesDepuisTexte } from './lireDocx';
-import { coordonneesDepuisTexte, detecterTitre, separerNom, versCentresInteret, versCertifications, versCompetences, versExperiences, versFormations, versLangues, type ResultatImport } from './decouperSections';
+import { coordonneesDepuisTexte, detecterTitre, extraireDates, separerNom, versCentresInteret, versCertifications, versCompetences, versExperiences, versFormations, versLangues, type ResultatImport } from './decouperSections';
 
 /** Crée un CV au format Finance à partir du résultat de l'import */
 export function cvDepuisImport(r: ResultatImport, nom?: string): CV {
@@ -33,7 +33,25 @@ export function remplacerContenu(cv: CV, r: ResultatImport) {
 // ---------------------------------------------------------------------------
 export type ChampInfo = 'nomComplet' | 'prenom' | 'nom' | 'titre' | 'email' | 'telephone' | 'ville' | 'linkedin' | 'site'
   | 'dateNaissance' | 'rythmeAlternance' | 'auto';
-export type Destination = CleSection | `infos.${ChampInfo}`;
+/** Champ d'une expérience ou d'une formation existante */
+export type ChampExperience = 'puces' | 'poste' | 'entreprise' | 'ville' | 'dates';
+export type ChampFormation = 'puces' | 'diplome' | 'etablissement' | 'ville' | 'dates';
+/**
+ * Où envoyer un texte :
+ * - une rubrique (nouvelle entrée détectée automatiquement) : 'experiences', 'competences'…
+ * - un champ des infos perso : 'infos.ville'
+ * - l'accroche, en la remplaçant : 'accroche.remplacer'
+ * - un champ d'une entrée existante : 'exp.<id>.puces', 'form.<id>.dates', 'comp.<id>' (groupe de compétences)
+ */
+export type Destination = CleSection | `infos.${ChampInfo}` | 'accroche.remplacer'
+  | `exp.${string}.${ChampExperience}` | `form.${string}.${ChampFormation}` | `comp.${string}`;
+
+export const CHAMPS_EXPERIENCE: [ChampExperience, string][] = [
+  ['puces', 'Missions / réalisations'], ['poste', 'Poste'], ['entreprise', 'Entreprise'], ['ville', 'Ville'], ['dates', 'Dates'],
+];
+export const CHAMPS_FORMATION: [ChampFormation, string][] = [
+  ['puces', 'Détails (mention, cours…)'], ['diplome', 'Diplôme'], ['etablissement', 'École'], ['ville', 'Ville'], ['dates', 'Dates'],
+];
 
 /** Sous-rubriques de « Infos perso », dans l'ordre du menu */
 export const CHAMPS_INFOS: [ChampInfo, string][] = [
@@ -53,11 +71,61 @@ export const CHAMPS_INFOS: [ChampInfo, string][] = [
 
 export const estInfo = (d: Destination): d is `infos.${ChampInfo}` => d.startsWith('infos.');
 
-/** Libellé lisible d'une destination : « Infos perso › Ville / localisation » */
-export function libelleDestination(d: Destination, libellesSections: Record<CleSection, string>): string {
-  if (!estInfo(d)) return libellesSections[d];
-  const champ = d.slice(6) as ChampInfo;
-  return `Infos perso › ${CHAMPS_INFOS.find(([c]) => c === champ)?.[1] ?? champ}`;
+/** Libellé lisible d'une destination : « Infos perso › Ville / localisation », « Expérience « Analyste » › Dates » */
+export function libelleDestination(d: Destination, libellesSections: Record<CleSection, string>, donnees?: DonneesCV): string {
+  if (estInfo(d)) {
+    const champ = d.slice(6) as ChampInfo;
+    return `Infos perso › ${CHAMPS_INFOS.find(([c]) => c === champ)?.[1] ?? champ}`;
+  }
+  if (d === 'accroche.remplacer') return `${libellesSections.accroche} (remplacer)`;
+  const [type, id, champ] = d.split('.');
+  if (type === 'exp') {
+    const e = donnees?.experiences.find(x => x.id === id);
+    return `Expérience « ${e ? e.poste || e.entreprise : '?'} » › ${CHAMPS_EXPERIENCE.find(([c]) => c === champ)?.[1] ?? champ}`;
+  }
+  if (type === 'form') {
+    const f = donnees?.formations.find(x => x.id === id);
+    return `Formation « ${f ? f.diplome || f.etablissement : '?'} » › ${CHAMPS_FORMATION.find(([c]) => c === champ)?.[1] ?? champ}`;
+  }
+  if (type === 'comp') return `Compétences › ${donnees?.competences.find(g => g.id === id)?.categorie || 'groupe'}`;
+  return libellesSections[d as CleSection];
+}
+
+/** Lignes d'un texte, sans puces ; les lignes coupées (suite en minuscule) sont recollées */
+function lignesPropres(texte: string): string[] {
+  const out: string[] = [];
+  for (const brut of texte.split('\n')) {
+    const l = brut.replace(/^\s*[•\-–]\s*/, '').trim();
+    if (!l) continue;
+    if (out.length && /^[a-zà-ÿ(]/.test(l) && !/^\s*[•\-–]/.test(brut)) out[out.length - 1] += ' ' + l;
+    else out.push(l);
+  }
+  return out;
+}
+
+/** Remplit un champ d'une expérience / formation existante ; renvoie les lignes non utilisées */
+function versEntree(d: DonneesCV, destination: string, texte: string): string[] {
+  const [type, id, champ] = destination.split('.');
+  const lignes = lignesPropres(texte);
+  if (type === 'comp') {
+    const g = d.competences.find(x => x.id === id);
+    if (!g) return lignes;
+    const elements = versCompetences(lignes).flatMap(x => x.elements);
+    g.elements.push(...elements.filter(e => !g.elements.includes(e)));
+    return [];
+  }
+  const entree = type === 'exp' ? d.experiences.find(x => x.id === id) : d.formations.find(x => x.id === id);
+  if (!entree) return lignes;
+  if (champ === 'puces') { entree.puces.push(...lignes.map(l => puce(l))); return []; }
+  const valeur = sansEtiquette(lignes.join(' '));
+  if (champ === 'dates') {
+    const dates = extraireDates(valeur);
+    if (!dates) return lignes; // aucune date reconnue : le texte reste à classer
+    entree.periode = dates.periode;
+    return [];
+  }
+  (entree as unknown as Record<string, string>)[champ] = valeur;
+  return [];
 }
 
 /** Retire une étiquette en début de texte : « Ville : Lyon » -> « Lyon », « Poste visé : Analyste » -> « Analyste » */
@@ -99,7 +167,9 @@ function versInfos(d: DonneesCV, lignes: string[], champ: ChampInfo): string[] {
  */
 export function ajouterTexte(d: DonneesCV, texte: string, destination: Destination): string[] {
   if (estInfo(destination)) return versInfos(d, texte.split('\n'), destination.slice(6) as ChampInfo);
-  const section = destination;
+  if (/^(exp|form|comp)\./.test(destination)) return versEntree(d, destination, texte);
+  if (destination === 'accroche.remplacer') { d.accroche = lignesPropres(texte).join(' '); return []; }
+  const section = destination as CleSection;
   // On retire une éventuelle première ligne de titre de section (« Projets », « Bénévolat »…)
   const lignes = lignesDepuisTexte(texte).filter((l, i) => !(i === 0 && detecterTitre(l))).map(l => l.texte);
   switch (section) {
@@ -129,6 +199,10 @@ export function ajouterTexte(d: DonneesCV, texte: string, destination: Destinati
       break;
     case 'centresInteret':
       d.centresInteret.push(...versCentresInteret(lignes));
+      break;
+    case 'qualites':
+      // (« Rigueur, autonomie » -> deux savoir-être)
+      d.qualites.push(...versCentresInteret(lignes).filter(q => !d.qualites.includes(q)));
       break;
   }
   return [];
