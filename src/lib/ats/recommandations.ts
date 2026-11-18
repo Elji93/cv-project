@@ -12,6 +12,8 @@ export interface CertifResultat extends CertificationReco {
   surCv: boolean;
   /** Citée dans l'offre */
   dansOffre: boolean;
+  /** Absente du CV mais gardée en réserve : identifiants des certifications à remettre sur le CV */
+  enReserve: string[];
 }
 
 export interface ParcoursResultat {
@@ -56,11 +58,16 @@ export function recommander(cv: CV, offre = ''): Recommandations {
   // Le métier se lit dans l'offre si elle est fournie (plus le titre du CV), sinon dans le CV
   const sourceN = offreN ? normaliser(`${offre}\n${cv.donnees.infosPerso.titre}`) : cvN;
 
-  const evaluer = (c: CertificationReco): CertifResultat => ({
-    ...c,
-    surCv: c.termes.some(t => contient(cvN, t)),
-    dansOffre: !!offreN && c.termes.some(t => contient(offreN, t)),
-  });
+  const reserve = cv.donnees.certifications.filter(x => x.masquee).map(x => ({ id: x.id, n: normaliser(`${x.intitule} ${x.organisme}`) }));
+  const evaluer = (c: CertificationReco): CertifResultat => {
+    const surCv = c.termes.some(t => contient(cvN, t));
+    return {
+      ...c,
+      surCv,
+      dansOffre: !!offreN && c.termes.some(t => contient(offreN, t)),
+      enReserve: surCv ? [] : reserve.filter(r => c.termes.some(t => contient(r.n, t))).map(r => r.id),
+    };
+  };
   // Les certifications citées dans l'offre et pas encore sur le CV passent en tête
   const ordonner = (liste: CertifResultat[]) => [...liste].sort((a, b) => Number(b.dansOffre && !b.surCv) - Number(a.dansOffre && !a.surCv));
   const resultat = (p: Parcours): ParcoursResultat => ({ parcours: p, score: scoreParcours(sourceN, p), certifications: ordonner(p.certifications.map(evaluer)) });

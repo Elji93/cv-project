@@ -149,19 +149,20 @@ export function Analyseur() {
             {reserve.length > 0 && (
               <div className="card border-sky-200">
                 <h3 className="font-semibold mb-1 flex items-center gap-1.5"><Archive size={16} className="text-brand-2" /> Dans votre réserve</h3>
-                <p className="text-xs text-gray-500 mb-2">Ces entrées sont gardées en mémoire mais absentes du CV. Elles contiennent des mots-clés de l'offre : remettez-les sur le CV si elles sont pertinentes.</p>
+                <p className="text-xs text-gray-500 mb-2">Ces éléments sont gardés en mémoire mais absents du CV. Elles contiennent des mots-clés de l'offre : remettez-les sur le CV si elles sont pertinentes.</p>
                 <ul className="divide-y divide-gray-100">
                   {reserve.map(s => (
                     <li key={s.id} className="flex items-start gap-2 py-2 text-sm">
                       <div className="flex-1 min-w-0">
-                        <div className="font-medium">{s.type === 'experience' ? 'Expérience' : 'Formation'} : {s.libelle}</div>
+                        <div className="font-medium">{({ experience: 'Expérience', formation: 'Formation', certification: 'Certification', competences: 'Compétences', langue: 'Langue' } as const)[s.type]} : {s.libelle}</div>
                         <div className="text-xs text-gray-600">
                           {s.motsCles.slice(0, 8).join(', ')}{s.motsCles.length > 8 ? '…' : ''}
                           {s.manquants > 0 && <span className="text-emerald-700 font-medium"> · {s.manquants} mot{s.manquants > 1 ? 's' : ''}-clé{s.manquants > 1 ? 's' : ''} absent{s.manquants > 1 ? 's' : ''} du CV actuel</span>}
                         </div>
                       </div>
                       <button className="btn-sm shrink-0" onClick={() => modifierCv(c => {
-                        const liste: { id: string; masquee?: boolean }[] = s.type === 'experience' ? c.donnees.experiences : c.donnees.formations;
+                        const listes = { experience: c.donnees.experiences, formation: c.donnees.formations, certification: c.donnees.certifications, competences: c.donnees.competences, langue: c.donnees.langues };
+                        const liste: { id: string; masquee?: boolean }[] = listes[s.type];
                         const x = liste.find(y => y.id === s.id);
                         if (x) x.masquee = false;
                       })}><Eye size={13} /> Mettre sur le CV</button>

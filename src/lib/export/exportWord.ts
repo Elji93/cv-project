@@ -125,7 +125,7 @@ export async function construireDocumentWord(cv: CV, avecPhoto = true): Promise<
       l.forEach((f, i) => contenu.push(...bloc(f.etablissement, f.diplome, f.ville, f, i === l.length - 1)));
     }
     if (cle === 'competences') {
-      const groupes = groupesAffiches(d.competences, cv.templateId).filter(g => g.elements.length);
+      const groupes = groupesAffiches(affichees(d.competences), cv.templateId).filter(g => g.elements.length);
       groupes.forEach((g, i) => {
         const encadre = modele.outilsEnAvant && estGroupeOutils(g); // modèle RH : groupe Outils encadré
         contenu.push(new Paragraph({
@@ -138,7 +138,7 @@ export async function construireDocumentWord(cv: CV, avecPhoto = true): Promise<
     if (cle === 'qualites' && d.qualites.length) contenu.push(paragraphe([T(d.qualites.join('  ·  '))]));
     if (cle === 'langues') {
       const runs: ParagraphChild[] = [];
-      d.langues.filter(l => rempli(l.langue)).forEach((l, i) => {
+      affichees(d.langues).filter(l => rempli(l.langue)).forEach((l, i) => {
         if (i) runs.push(T('  |  ', { color: '9AA0A8' }));
         runs.push(T(l.langue, { bold: true }));
         runs.push(T(' : ' + (NIVEAUX_CECRL.find(n => n.id === l.niveau)?.[langue] ?? l.niveau) + (rempli(l.precision) ? ` — ${l.precision}` : '')));
@@ -146,7 +146,7 @@ export async function construireDocumentWord(cv: CV, avecPhoto = true): Promise<
       if (runs.length) contenu.push(paragraphe(runs));
     }
     if (cle === 'certifications') {
-      const l = d.certifications.filter(c => rempli(c.intitule)).map(c => {
+      const l = affichees(d.certifications).filter(c => rempli(c.intitule)).map(c => {
         const infos = [c.organisme, c.annee].filter(rempli).join(', ');
         return c.intitule + (infos ? ` (${infos})` : '');
       });

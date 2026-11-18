@@ -10,6 +10,7 @@ import { construireDocumentWord } from '../lib/export/exportWord';
 import { analyserCv, suggestionsReserve, texteBrutCv } from '../lib/ats/scoring';
 import { affichees, experienceVide, formationVide } from '../lib/cv';
 import { classerLignes, libelleDestination } from '../lib/import/classer';
+import { recommander } from '../lib/ats/recommandations';
 
 const OFFRE = `Analyste Transaction Services
 Vous réaliserez des due diligences financières et des analyses de qualité des résultats (EBITDA normatif).
@@ -100,5 +101,44 @@ describe('sous-rubriques : envoyer un texte vers un champ précis d’une entré
     const e = d.experiences[0];
     expect(libelleDestination(`exp.${e.id}.dates`, LIBELLES_SECTIONS, d)).toBe(`Expérience « ${e.poste} » › Dates`);
     expect(libelleDestination('accroche.remplacer', LIBELLES_SECTIONS)).toBe('Accroche (remplacer)');
+  });
+});
+
+describe('réserve partout : certifications, groupes de compétences, langues', () => {
+  function cvComplet() {
+    const cv = cvExemple();
+    cv.donnees.certifications = [
+      { id: 'c1', intitule: 'Certification AMF', organisme: 'AMF', annee: '2024' },
+      { id: 'c2', intitule: 'Cisco CCNA', organisme: 'Cisco', annee: '2022', masquee: true },
+    ];
+    cv.donnees.competences.push({ id: 'g-res', categorie: 'Réseaux', elements: ['VLAN', 'Routage OSPF'], masquee: true });
+    cv.donnees.langues.push({ id: 'l-res', langue: 'Italien', niveau: 'B1', precision: '', masquee: true });
+    return cv;
+  }
+
+  it('absents de la feuille, du Word et du texte analysé, mais toujours en mémoire', async () => {
+    const cv = cvComplet();
+    const html = renderToStaticMarkup(<Feuille cv={cv} />);
+    for (const t of ['Cisco CCNA', 'Routage OSPF', 'Italien']) expect(html, t).not.toContain(t);
+    expect(html).toContain('Certification AMF');
+    const doc = await (await JSZip.loadAsync(await Packer.toBuffer(await construireDocumentWord(cv, false)))).file('word/document.xml')!.async('string');
+    for (const t of ['Cisco CCNA', 'Routage OSPF', 'Italien']) expect(doc, t).not.toContain(t);
+    expect(texteBrutCv(cv)).not.toMatch(/CCNA|OSPF|Italien/);
+    expect(cv.donnees.certifications).toHaveLength(2);
+  });
+
+  it('l’analyseur propose de remettre la certification et le groupe correspondant à l’offre', () => {
+    const cv = cvComplet();
+    const offre = 'Administrateur réseaux\nVous gérez les VLAN et le routage OSPF des sites.\nProfil : certification CCNA exigée, italien apprécié.';
+    const s = suggestionsReserve(cv, analyserCv(cv, offre, '', true));
+    expect(s.map(x => x.type).sort()).toEqual(['certification', 'competences', 'langue']);
+  });
+
+  it('carte « Booster » : la certification en réserve est reconnue (pas proposée à rajouter)', () => {
+    const cv = cvComplet();
+    const r = recommander(cv, 'Technicien réseaux : routage, VLAN, Cisco, CCNA exigée, switching, DHCP.');
+    const ccna = r.tous.flatMap(p => p.certifications).find(c => c.id === 'ccna')!;
+    expect(ccna.surCv).toBe(false);
+    expect(ccna.enReserve).toEqual(['c2']);
   });
 });

@@ -109,9 +109,9 @@ export function texteBrutCv(cv: CV) {
       sec.push([f.etablissement, f.diplome, f.ville, formaterPeriode(f.periode, cv.langue)].filter(rempli).join(' | '));
       f.puces.filter(x => rempli(x.texte)).forEach(x => sec.push('- ' + x.texte));
     });
-    if (cle === 'competences') d.competences.filter(g => g.elements.length).forEach(g => sec.push((rempli(g.categorie) ? g.categorie + ' : ' : '') + g.elements.join(', ')));
-    if (cle === 'langues') d.langues.filter(l => rempli(l.langue)).forEach(l => sec.push(`${l.langue} : ${NIVEAUX_CECRL.find(n => n.id === l.niveau)?.fr ?? l.niveau}${rempli(l.precision) ? ' — ' + l.precision : ''}`));
-    if (cle === 'certifications') d.certifications.filter(c => rempli(c.intitule)).forEach(c => sec.push([c.intitule, c.organisme, c.annee].filter(rempli).join(', ')));
+    if (cle === 'competences') affichees(d.competences).filter(g => g.elements.length).forEach(g => sec.push((rempli(g.categorie) ? g.categorie + ' : ' : '') + g.elements.join(', ')));
+    if (cle === 'langues') affichees(d.langues).filter(l => rempli(l.langue)).forEach(l => sec.push(`${l.langue} : ${NIVEAUX_CECRL.find(n => n.id === l.niveau)?.fr ?? l.niveau}${rempli(l.precision) ? ' — ' + l.precision : ''}`));
+    if (cle === 'certifications') affichees(d.certifications).filter(c => rempli(c.intitule)).forEach(c => sec.push([c.intitule, c.organisme, c.annee].filter(rempli).join(', ')));
     if (cle === 'centresInteret' && d.centresInteret.length) sec.push(d.centresInteret.join(', '));
     if (sec.length) out.push('', titreSection(cv, cle).toUpperCase(), ...sec);
   });
@@ -156,10 +156,10 @@ export function analyserCv(cv: CV, offre: string, intituleSaisi: string, tientSu
   const zoneForte = normaliser([
     p.titre,
     visible('accroche') ? `${d.accroche} ${d.rythmeAlternance}` : '',
-    visible('competences') ? d.competences.map(g => `${g.categorie} , ${g.elements.join(' , ')}`).join(' , ') : '',
+    visible('competences') ? affichees(d.competences).map(g => `${g.categorie} , ${g.elements.join(' , ')}`).join(' , ') : '',
     visible('qualites') ? d.qualites.join(' , ') : '',
-    visible('certifications') ? d.certifications.map(c => `${c.intitule} ${c.organisme}`).join(' , ') : '',
-    visible('langues') ? d.langues.map(l => `${l.langue} ${NIVEAUX_CECRL.find(n => n.id === l.niveau)?.fr ?? ''} ${NIVEAUX_CECRL.find(n => n.id === l.niveau)?.en ?? ''} ${l.niveau} ${l.precision}`).join(' , ') : '',
+    visible('certifications') ? affichees(d.certifications).map(c => `${c.intitule} ${c.organisme}`).join(' , ') : '',
+    visible('langues') ? affichees(d.langues).map(l => `${l.langue} ${NIVEAUX_CECRL.find(n => n.id === l.niveau)?.fr ?? ''} ${NIVEAUX_CECRL.find(n => n.id === l.niveau)?.en ?? ''} ${l.niveau} ${l.precision}`).join(' , ') : '',
   ].join(' , '));
   const zoneExperiences = normaliser([
     visible('experiences') ? affichees(d.experiences).map(e => [e.poste, e.entreprise, ...e.puces.map(x => x.texte)].join(' , ')).join(' , ') : '',
@@ -264,8 +264,9 @@ export function analyserCv(cv: CV, offre: string, intituleSaisi: string, tientSu
 //  Réserve : expériences et formations gardées en mémoire mais absentes du CV,
 //  qui contiennent des mots-clés de l'offre (à remettre sur le CV ?)
 // ---------------------------------------------------------------------------
+export type TypeReserve = 'experience' | 'formation' | 'certification' | 'competences' | 'langue';
 export interface SuggestionReserve {
-  type: 'experience' | 'formation';
+  type: TypeReserve;
   id: string;
   libelle: string;
   /** Mots-clés de l'offre trouvés dans cette entrée */
@@ -284,6 +285,15 @@ export function suggestionsReserve(cv: CV, r: ResultatAts): SuggestionReserve[] 
     ...cv.donnees.formations.filter(f => f.masquee).map(f => ({
       type: 'formation' as const, id: f.id, libelle: [f.diplome, f.etablissement].filter(rempli).join(' — ') || 'Formation',
       texte: [f.diplome, f.etablissement, ...f.puces.map(p => p.texte)].join(' , '),
+    })),
+    ...cv.donnees.certifications.filter(c => c.masquee).map(c => ({
+      type: 'certification' as const, id: c.id, libelle: c.intitule || 'Certification', texte: [c.intitule, c.organisme].join(' , '),
+    })),
+    ...cv.donnees.competences.filter(g => g.masquee).map(g => ({
+      type: 'competences' as const, id: g.id, libelle: g.categorie || 'Groupe de compétences', texte: [g.categorie, ...g.elements].join(' , '),
+    })),
+    ...cv.donnees.langues.filter(l => l.masquee).map(l => ({
+      type: 'langue' as const, id: l.id, libelle: l.langue || 'Langue', texte: [l.langue, l.precision].join(' , '),
     })),
   ];
   return entrees.map(e => {

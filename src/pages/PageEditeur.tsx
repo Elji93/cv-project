@@ -1,9 +1,10 @@
 // Page « Éditeur » : panneau de gauche (saisie / mise en forme) + aperçu A4
-import { useState } from 'react';
+import { lazy, Suspense, useState } from 'react';
 import { Palette, PenLine } from 'lucide-react';
 import { GestionCV } from '../components/gestionCV/GestionCV';
 import { PanneauSaisie } from '../components/editeur/PanneauSaisie';
-import { PanneauStyle } from '../components/style/PanneauStyle';
+// Mise en forme (glisser-déposer, miniatures, traduction) : chargée au premier clic sur son onglet
+const PanneauStyle = lazy(() => import('../components/style/PanneauStyle').then(m => ({ default: m.PanneauStyle })));
 import { ApercuA4 } from '../components/feuille/ApercuA4';
 import { BasculeVue, classesVue, type Vue } from '../components/commun/BasculeVue';
 
@@ -24,7 +25,7 @@ export function PageEditeur() {
             </button>
           ))}
         </div>
-        <div className="flex-1 min-h-0">{panneau === 'saisie' ? <PanneauSaisie /> : <PanneauStyle />}</div>
+        <div className="flex-1 min-h-0">{panneau === 'saisie' ? <PanneauSaisie /> : <Suspense fallback={null}><PanneauStyle /></Suspense>}</div>
       </aside>
       <div className={`${c.apercu} flex-1 min-w-0 min-h-0`}><ApercuA4 /></div>
     </main>

@@ -86,7 +86,7 @@ export function genererConseils(cv: CV, r: ResultatAts, c: Contexte): Conseil[] 
     .map(([k]) => ({ email: 'email', telephone: 'téléphone', ville: 'ville', linkedin: 'URL LinkedIn' }[k]));
   if (manque.length) conseils.push({ priorite: 'moyenne', texte: `Complétez vos coordonnées : ${manque.join(', ')}.` });
   if (!c.tientSurUnePage) conseils.push({ priorite: 'haute', texte: 'Votre CV dépasse une page A4 : utilisez « Tout faire tenir sur 1 page » dans l’éditeur.' });
-  if (enAnglais && cv.langue === 'fr') conseils.push({ priorite: 'basse', texte: 'Offre en anglais : envisagez une version anglaise du CV (Mise en forme › Langue du CV) pour les intitulés de sections et les dates.' });
+  if (enAnglais && cv.langue === 'fr') conseils.push({ priorite: 'basse', texte: 'Offre en anglais : créez une version anglaise du CV (Mise en forme › « Créer une version anglaise ») : le texte est traduit via ChatGPT / Claude, titres de sections et dates compris.' });
   if (enAnglais && p.photo?.affichee) conseils.push({ priorite: 'basse', texte: 'Offre en anglais : la photo est déconseillée pour les candidatures UK / US. Décochez « Afficher » dans Infos & photo.' });
 
   const ordre = { haute: 0, moyenne: 1, basse: 2 };

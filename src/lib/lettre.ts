@@ -73,7 +73,7 @@ export function brouillonLettre(cv: CV, l: Pick<LettreMotivation, 'entreprise' |
   const poste = l.poste.trim() || d.infosPerso.titre.trim() || '[intitulé du poste]';
   const exp = affichees(d.experiences)[0];
   const form = affichees(d.formations)[0];
-  const outils = d.competences.flatMap(g => g.elements).slice(0, 3).join(', ');
+  const outils = affichees(d.competences).flatMap(g => g.elements).slice(0, 3).join(', ');
   if (cv.langue === 'en') {
     return [
       `I am writing to apply for the ${poste} position at ${ent}. [What attracts you to ${ent}: a recent deal, its sector, its values, its growth.]`,

@@ -164,7 +164,7 @@ export const Feuille = forwardRef<HTMLDivElement, Props>(function Feuille({ cv, 
       }
 
       case 'competences': {
-        const liste = groupesAffiches(d.competences, cv.templateId).filter(g => edition || g.elements.length);
+        const liste = groupesAffiches(affichees(d.competences), cv.templateId).filter(g => edition || g.elements.length);
         if (!liste.length) return null;
         return liste.map(g => {
           const cherche = (c: CV) => c.donnees.competences.find(x => x.id === g.id);
@@ -178,7 +178,7 @@ export const Feuille = forwardRef<HTMLDivElement, Props>(function Feuille({ cv, 
       }
 
       case 'langues': {
-        const liste = d.langues.filter(l => rempli(l.langue));
+        const liste = affichees(d.langues).filter(l => rempli(l.langue));
         if (!liste.length && !edition) return null;
         return (
           <div className="cv-inline">
@@ -197,7 +197,7 @@ export const Feuille = forwardRef<HTMLDivElement, Props>(function Feuille({ cv, 
       }
 
       case 'certifications': {
-        const liste = d.certifications.filter(x => edition || rempli(x.intitule));
+        const liste = affichees(d.certifications).filter(x => edition || rempli(x.intitule));
         if (!liste.length) return null;
         return (
           <div className="cv-inline">

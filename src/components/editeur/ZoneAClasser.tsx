@@ -2,11 +2,11 @@
 //  Zone « À classer » : textes importés que l'outil n'a pas su ranger.
 //  Ils restent enregistrés avec le CV : on peut les traiter plus tard.
 // ============================================================================
-import { useState } from 'react';
+import { lazy, Suspense, useState } from 'react';
 import { ChevronDown, ChevronRight, Inbox } from 'lucide-react';
 import { useCvActif, useModifierCv } from '../../store/useAppStore';
-import { classerSelection } from '../../lib/import/classer';
-import { FragmentACocher } from '../import/FragmentACocher';
+// La liste (et la reconnaissance des CV qu'elle utilise) n'est chargée que s'il y a quelque chose à classer
+const ListeAClasser = lazy(() => import('./ListeAClasser').then(m => ({ default: m.ListeAClasser })));
 
 export function ZoneAClasser() {
   const cv = useCvActif();
@@ -23,10 +23,7 @@ export function ZoneAClasser() {
       {ouvert && (
         <div className="px-3 pb-3 space-y-2 max-h-[45vh] overflow-auto">
           <p className="text-[11.5px] text-amber-900">Cochez les lignes qui vont ensemble (ex. un poste, son entreprise, ses dates et ses puces), puis choisissez la section. Vérifiez ensuite le résultat sur la feuille.</p>
-          {cv.aClasser.map(f => (
-            <FragmentACocher key={f.id + f.texte.length} fragment={f}
-              donnees={cv.donnees} onEnvoyer={(lignes, section) => modifier(c => classerSelection(c, f.id, lignes, section))} />
-          ))}
+          <Suspense fallback={<p className="text-[11.5px] text-amber-900">Chargement…</p>}><ListeAClasser cv={cv} modifier={modifier} /></Suspense>
         </div>
       )}
     </div>

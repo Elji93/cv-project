@@ -94,6 +94,8 @@ export interface GroupeCompetences {
   categorie: string;
   /** Un élément = un mot-clé (plus fiable pour le score ATS) */
   elements: string[];
+  /** En réserve : gardé(e) en mémoire mais absent(e) du CV */
+  masquee?: boolean;
 }
 
 export type NiveauCECRL = 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2' | 'natif';
@@ -104,6 +106,8 @@ export interface Langue {
   niveau: NiveauCECRL;
   /** Facultatif, ex. « TOEIC 945 » */
   precision: string;
+  /** En réserve : gardé(e) en mémoire mais absent(e) du CV */
+  masquee?: boolean;
 }
 
 export interface Certification {
@@ -111,6 +115,8 @@ export interface Certification {
   intitule: string;
   organisme: string;
   annee: string;
+  /** En réserve : gardé(e) en mémoire mais absent(e) du CV */
+  masquee?: boolean;
 }
 
 /** Morceau de texte importé que l'outil n'a pas su classer (à traiter plus tard) */

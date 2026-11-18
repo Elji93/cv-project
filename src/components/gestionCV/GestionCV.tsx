@@ -1,14 +1,15 @@
 // ============================================================================
 //  Barre de gestion des CV : choisir le CV ouvert, en créer un, gérer la liste
 // ============================================================================
-import { useState } from 'react';
+import { lazy, Suspense, useState } from 'react';
 import { FileUp, FolderOpen, Plus, Trash2 } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
 import { confirmer } from '../../store/dialogues';
 import { nomComplet } from '../../lib/cv';
 import { ModaleNouveauCv } from './ModaleNouveauCv';
 import { ModaleMesCv } from './ModaleMesCv';
-import { ModaleImport } from '../import/ModaleImport';
+// La fenêtre d'import (et la reconnaissance des CV) est chargée à la demande
+const ModaleImport = lazy(() => import('../import/ModaleImport').then(m => ({ default: m.ModaleImport })));
 
 export function GestionCV() {
   const cvs = useAppStore(e => e.cvs);
@@ -30,7 +31,7 @@ export function GestionCV() {
       </button>
       <button className="icon-btn border border-gray-200" title="Mes CV et sauvegardes" aria-label="Mes CV et sauvegardes" onClick={() => setOuverte('liste')}><FolderOpen size={16} /></button>
       {ouverte === 'nouveau' && <ModaleNouveauCv onFermer={() => setOuverte(null)} onImporter={() => setOuverte('import')} />}
-      {ouverte === 'import' && <ModaleImport onFermer={() => setOuverte(null)} />}
+      {ouverte === 'import' && <Suspense fallback={null}><ModaleImport onFermer={() => setOuverte(null)} /></Suspense>}
       {ouverte === 'liste' && <ModaleMesCv onFermer={() => setOuverte(null)} />}
     </div>
   );

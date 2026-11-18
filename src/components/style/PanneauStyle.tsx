@@ -2,7 +2,9 @@
 //  Panneau « Mise en forme » : modèle, langue, couleur, police, espacements,
 //  ordre et visibilité des sections
 // ============================================================================
-import { RotateCcw } from 'lucide-react';
+import { useState } from 'react';
+import { Languages, RotateCcw } from 'lucide-react';
+import { ModaleTraduction } from './ModaleTraduction';
 import type { LangueCV, StyleCV } from '../../types';
 import { useCvActif, useModifierCv } from '../../store/useAppStore';
 import { COULEURS, POLICES, STYLE_PAR_DEFAUT } from '../../data/constantes';
@@ -16,6 +18,7 @@ export function PanneauStyle() {
   const cv = useCvActif();
   const modifier = useModifierCv();
   const s = cv.style;
+  const [traduction, setTraduction] = useState(false);
 
   const changerStyle = <K extends keyof StyleCV>(k: K, v: StyleCV[K]) => modifier(c => { c.style[k] = v; });
 
@@ -47,6 +50,10 @@ export function PanneauStyle() {
         ))}
         <span className="text-[11.5px] text-gray-500 self-center">Titres de sections et dates</span>
       </div>
+      <button className="btn w-full mb-5 -mt-3" onClick={() => setTraduction(true)}>
+        <Languages size={14} /> Créer une version {cv.langue === 'en' ? 'française' : 'anglaise'} (texte traduit)…
+      </button>
+      {traduction && <ModaleTraduction cv={cv} onFermer={() => setTraduction(false)} />}
 
       <h4 className="subhead">Couleur d'accent</h4>
       <div className="flex flex-wrap items-center gap-2 mb-5">

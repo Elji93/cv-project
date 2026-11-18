@@ -4,7 +4,7 @@
 //  et dans l'onglet Certifications de l'éditeur.
 // ============================================================================
 import { useMemo, useState } from 'react';
-import { AlertTriangle, Award, Check, Plus, Rocket } from 'lucide-react';
+import { AlertTriangle, Archive, Award, Check, Plus, Rocket } from 'lucide-react';
 import type { CV } from '../../types';
 import { LIBELLE_NIVEAU, type NiveauCertif } from '../../data/certifications';
 import { recommander, type CertifResultat } from '../../lib/ats/recommandations';
@@ -56,6 +56,10 @@ export function BoosterCandidature({ cv, offre = '', compact }: Props) {
         </div>
         {c.surCv
           ? <span className="shrink-0 inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 mt-0.5"><Check size={14} /> Sur votre CV</span>
+          : c.enReserve.length
+          ? <button className="btn-sm shrink-0" title="Cette certification est dans votre réserve : la remettre sur le CV"
+              onClick={() => useAppStore.getState().modifierCv(x => { x.donnees.certifications.forEach(y => { if (c.enReserve.includes(y.id)) y.masquee = false; }); x.sectionsMasquees = x.sectionsMasquees.filter(s => s !== 'certifications'); }, cv.id)}>
+              <Archive size={12} /> Remettre sur le CV</button>
           : <button className="btn-sm shrink-0" onClick={() => ajouter(c)} title="Ajoute la certification au CV avec la mention « En cours »"><Plus size={12} /> En cours</button>}
       </div>
     </li>

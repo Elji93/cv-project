@@ -17,7 +17,6 @@ import { BasculeVue, classesVue, type Vue } from '../components/commun/BasculeVu
 import { EVENEMENT_PDF } from '../components/commun/useRaccourcis';
 import { LARGEUR_A4_PX, useMesurePage } from '../lib/mesurePage';
 import { imprimer } from '../lib/export/exportPdf';
-import { exporterLettreWord } from '../lib/export/exportLettreWord';
 import {
   brouillonLettre, candidatureVide, lettreVierge, lieuDateAuto, nomFichierLettre, objetAuto, verifierLettre,
 } from '../lib/lettre';
@@ -136,7 +135,7 @@ function EditeurLettre({ lettre: l, lettres, cvs, onChoisir, onNouvelle, onModif
 
   const word = async () => {
     setEnCours(true);
-    try { await exporterLettreWord(cv, l); notifier('Fichier Word téléchargé ✓'); }
+    try { const { exporterLettreWord } = await import('../lib/export/exportLettreWord'); await exporterLettreWord(cv, l); notifier('Fichier Word téléchargé ✓'); }
     catch (e) { console.error(e); notifier('Erreur export Word : ' + (e as Error).message); }
     finally { setEnCours(false); }
   };

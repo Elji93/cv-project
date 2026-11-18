@@ -1,7 +1,7 @@
 // ============================================================================
 //  Structure générale : barre du haut, pages (HashRouter), zone d'impression
 // ============================================================================
-import { useRef, useState } from 'react';
+import { lazy, Suspense, useRef, useState } from 'react';
 import { NavLink, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { ClipboardList, FileDown, FileText, Gauge, Loader2, Mail, PenLine, Redo2, ShieldCheck, Undo2 } from 'lucide-react';
 import { extraireDonnees, useAppStore, useCvActif } from './store/useAppStore';
@@ -11,13 +11,13 @@ import { Dialogues } from './components/commun/Dialogues';
 import { ModaleExportPdf } from './components/export/ModaleExportPdf';
 import { useMesurePage } from './lib/mesurePage';
 import { confirmer } from './store/dialogues';
-import { exporterWord } from './lib/export/exportWord';
 import { exporterPdf } from './lib/export/exportPdf';
 import { nomFichier } from './lib/export/nomFichier';
 import { PageEditeur } from './pages/PageEditeur';
-import { PageAnalyseur } from './pages/PageAnalyseur';
-import { PageLettre } from './pages/PageLettre';
-import { PageCandidatures } from './pages/PageCandidatures';
+// Pages chargées à la demande : l'éditeur s'ouvre plus vite
+const PageAnalyseur = lazy(() => import('./pages/PageAnalyseur').then(m => ({ default: m.PageAnalyseur })));
+const PageLettre = lazy(() => import('./pages/PageLettre').then(m => ({ default: m.PageLettre })));
+const PageCandidatures = lazy(() => import('./pages/PageCandidatures').then(m => ({ default: m.PageCandidatures })));
 import { FeuilleLettre } from './components/lettre/FeuilleLettre';
 import { useImpression } from './store/impression';
 import { telechargerSauvegarde } from './lib/export/exportJson';
@@ -48,7 +48,8 @@ export function App() {
       libelleOk: 'Exporter quand même',
     })) return;
     setEnCours(true);
-    try { await exporterWord(cv); notifier('Fichier Word téléchargé ✓'); }
+    // (la bibliothèque Word est chargée seulement au moment de l'export : le site s'ouvre plus vite)
+    try { const { exporterWord } = await import('./lib/export/exportWord'); await exporterWord(cv); notifier('Fichier Word téléchargé ✓'); }
     catch (e) { console.error(e); notifier('Erreur export Word : ' + (e as Error).message); }
     finally { setEnCours(false); }
   };
@@ -109,6 +110,7 @@ export function App() {
 
         {erreurSauvegarde && <div className="bg-red-50 text-red-700 text-sm px-4 py-1.5 border-b border-red-200">{erreurSauvegarde}</div>}
 
+        <Suspense fallback={<main className="flex-1 grid place-items-center text-sm text-gray-500"><Loader2 size={20} className="animate-spin" /></main>}>
         <Routes>
           <Route path="/" element={<PageEditeur />} />
           <Route path="/analyseur" element={<PageAnalyseur />} />
@@ -116,6 +118,7 @@ export function App() {
           <Route path="/candidatures" element={<PageCandidatures />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
+        </Suspense>
 
         {aidePdf && <ModaleExportPdf nom={nomFichier(cv)} tient={tient} onImprimer={() => { useImpression.setState({ lettreId: null }); exporterPdf(cv); }} onFermer={() => setAidePdf(false)} />}
         <Dialogues />
