@@ -87,31 +87,75 @@ jobs:
           - Termine par un résumé de 3 à 5 phrases en français : ce qui a changé, pourquoi, comment le vérifier.
           EOF
 
-      # 3. L'agent travaille (sans commit : les changements restent dans l'arbre de travail)
+      # 3. L'agent travaille (sans commit : les changements restent dans l'arbre de travail).
+      #    Palier gratuit de Gemini : si le quota est épuisé (429 / RESOURCE_EXHAUSTED),
+      #    une seule nouvelle tentative avec le modèle de secours. Si elle échoue aussi,
+      #    on annule tout (rien ne sera poussé) et on l'explique dans le résumé de l'exécution.
       - name: Lancer aider
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           MODELE: ${{ github.event.inputs.modele || 'gemini/gemini-2.5-flash' }}
+          MODELE_SECOURS: gemini/gemini-2.5-flash-lite
         run: |
           if [ -z "$GEMINI_API_KEY" ]; then
             echo "::error::Le secret GEMINI_API_KEY n'est pas configuré."; exit 1
           fi
-          aider \
-            --model "$MODELE" \
-            --yes-always \
-            --no-auto-commits \
-            --no-dirty-commits \
-            --no-gitignore \
-            --no-suggest-shell-commands \
-            --no-detect-urls \
-            --no-check-update \
-            --no-show-model-warnings \
-            --analytics-disable \
-            --no-pretty --no-stream \
-            --map-tokens 4096 \
-            --read AGENTS.md \
-            --auto-test --test-cmd "npm run build && npm test" \
-            --message-file /tmp/consigne.txt 2>&1 | tee /tmp/aider.log || true
+
+          # Lance aider avec le modèle $1 ; son journal va dans le fichier $2
+          lancer_aider() {
+            aider \
+              --model "$1" \
+              --yes-always \
+              --no-auto-commits \
+              --no-dirty-commits \
+              --no-gitignore \
+              --no-suggest-shell-commands \
+              --no-detect-urls \
+              --no-check-update \
+              --no-show-model-warnings \
+              --analytics-disable \
+              --no-pretty --no-stream \
+              --map-tokens 4096 \
+              --read AGENTS.md \
+              --auto-test --test-cmd "npm run build && npm test" \
+              --message-file /tmp/consigne.txt 2>&1 | tee "$2" || true
+          }
+          # Le journal montre-t-il une erreur de quota de l'API Gemini ?
+          quota_epuise() {
+            grep -qE 'RESOURCE_EXHAUSTED|RateLimitError|429 Too Many Requests|("code"|[Ss]tatus|[Ee]rror code)[^A-Za-z0-9]{0,4}429' "$1"
+          }
+          # Remet l'arbre de travail dans l'état de main (annule les modifications partielles)
+          annuler_modifications() {
+            git checkout -q -- .
+            git clean -fdq
+          }
+
+          lancer_aider "$MODELE" /tmp/aider-1.log
+          cp /tmp/aider-1.log /tmp/aider.log
+
+          if quota_epuise /tmp/aider-1.log; then
+            echo "::warning::Quota Gemini atteint avec $MODELE : nouvelle tentative avec $MODELE_SECOURS."
+            annuler_modifications
+            lancer_aider "$MODELE_SECOURS" /tmp/aider-2.log
+            cp /tmp/aider-2.log /tmp/aider.log
+
+            if quota_epuise /tmp/aider-2.log; then
+              annuler_modifications
+              echo "::warning::Quota Gemini atteint aussi avec $MODELE_SECOURS : aucune modification proposée."
+              {
+                echo "## ⏸️ Quota Gemini épuisé"
+                echo
+                echo "L'agent n'a rien pu faire : le palier gratuit de Google AI Studio a refusé les requêtes"
+                echo "(erreur 429 / RESOURCE_EXHAUSTED) avec **$MODELE**, puis avec le modèle de secours **$MODELE_SECOURS**."
+                echo
+                echo "- Rien n'a été poussé et aucune Pull Request n'a été créée."
+                echo "- Le quota se renouvelle automatiquement : la prochaine exécution (lundi) réessaiera."
+                echo "- Pour réessayer plus tôt : relance le workflow dans quelques heures (onglet Actions › Run workflow)."
+              } >> "$GITHUB_STEP_SUMMARY"
+            else
+              echo "Le modèle de secours $MODELE_SECOURS a été utilisé (quota atteint avec $MODELE)." >> "$GITHUB_STEP_SUMMARY"
+            fi
+          fi
 
       # 4. Garde-fous : on annule toute modification interdite, puis build + tests obligatoires
       - name: Annuler les modifications de fichiers protégés
