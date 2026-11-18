@@ -14,7 +14,7 @@ on:
       modele:
         description: 'Modèle utilisé par aider'
         required: false
-        default: 'gemini/gemini-2.5-flash'
+        default: 'gemini/gemini-3.8-flash'
 
 permissions:
   contents: write
@@ -94,8 +94,8 @@ jobs:
       - name: Lancer aider
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          MODELE: ${{ github.event.inputs.modele || 'gemini/gemini-2.5-flash' }}
-          MODELE_SECOURS: gemini/gemini-2.5-flash-lite
+          MODELE: ${{ github.event.inputs.modele || 'gemini/gemini-3.8-flash' }}
+          MODELE_SECOURS: gemini/gemini-3.5-flash-lite
         run: |
           if [ -z "$GEMINI_API_KEY" ]; then
             echo "::error::Le secret GEMINI_API_KEY n'est pas configuré."; exit 1
@@ -124,18 +124,24 @@ jobs:
           quota_epuise() {
             grep -qE 'RESOURCE_EXHAUSTED|RateLimitError|429 Too Many Requests|("code"|[Ss]tatus|[Ee]rror code)[^A-Za-z0-9]{0,4}429' "$1"
           }
+          # Le journal montre-t-il un modèle introuvable ou retiré (erreur 404 / NOT_FOUND) ?
+          modele_introuvable() {
+            grep -qE 'NotFoundError|"status": "NOT_FOUND"|no longer available' "$1"
+          }
           # Remet l'arbre de travail dans l'état de main (annule les modifications partielles)
           annuler_modifications() {
             git checkout -q -- .
             git clean -fdq
           }
 
+          MODELE_UTILISE="$MODELE"
           lancer_aider "$MODELE" /tmp/aider-1.log
           cp /tmp/aider-1.log /tmp/aider.log
 
           if quota_epuise /tmp/aider-1.log; then
             echo "::warning::Quota Gemini atteint avec $MODELE : nouvelle tentative avec $MODELE_SECOURS."
             annuler_modifications
+            MODELE_UTILISE="$MODELE_SECOURS"
             lancer_aider "$MODELE_SECOURS" /tmp/aider-2.log
             cp /tmp/aider-2.log /tmp/aider.log
 
@@ -155,6 +161,23 @@ jobs:
             else
               echo "Le modèle de secours $MODELE_SECOURS a été utilisé (quota atteint avec $MODELE)." >> "$GITHUB_STEP_SUMMARY"
             fi
+          fi
+
+          # Modèle retiré ou mal écrit : on l'explique au lieu de finir « en vert » sans rien dire
+          if modele_introuvable /tmp/aider.log; then
+            annuler_modifications
+            echo "::warning::Modèle Gemini introuvable : $MODELE_UTILISE (erreur 404). Aucune modification proposée."
+            {
+              echo "## ⚠️ Modèle Gemini indisponible"
+              echo
+              echo "Google a répondu « 404 / NOT_FOUND » pour le modèle **$MODELE_UTILISE** : il a été retiré,"
+              echo "n'est pas ouvert à votre compte, ou son nom est mal écrit."
+              echo
+              echo "- Rien n'a été poussé et aucune Pull Request n'a été créée."
+              echo "- Pour corriger : relancez le workflow (onglet Actions › Run workflow) en indiquant un autre nom"
+              echo "  dans le champ « Modèle utilisé par aider », par exemple un modèle listé sur https://aistudio.google.com/docs/models"
+              echo "  (préfixe « gemini/ »), ou changez le modèle par défaut dans .github/workflows/autonomous-agent.yml."
+            } >> "$GITHUB_STEP_SUMMARY"
           fi
 
       # 4. Garde-fous : on annule toute modification interdite, puis build + tests obligatoires
@@ -215,7 +238,7 @@ jobs:
             echo '```'
             echo "</details>"
             echo
-            echo "_Modèle : ${{ github.event.inputs.modele || 'gemini/gemini-2.5-flash' }} · exécution [#${{ github.run_number }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})_"
+            echo "_Modèle : ${{ github.event.inputs.modele || 'gemini/gemini-3.8-flash' }} · exécution [#${{ github.run_number }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})_"
           } > /tmp/pr-body.md
           git reset -q
 
