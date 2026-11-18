@@ -1,0 +1,132 @@
+/* ==========================================================================
+   Feuille CV A4 (210 × 297 mm)
+   Une seule colonne, du vrai texte, aucun tableau ni zone de texte :
+   c'est ce qui la rend lisible par les ATS.
+   Les variables --cv-… sont remplies par Feuille.tsx à partir du style du CV.
+   ========================================================================== */
+.cv-page {
+  --cv-accent: #1f3a5f;
+  --cv-font: Calibri, Carlito, Arial, sans-serif;
+  --cv-size: 10pt;
+  --cv-lh: 1.22;
+  --cv-margin: 14mm;
+  --cv-gap: 1;
+  --cv-text: #1a1a1a;
+  width: 210mm;
+  min-height: 297mm;
+  background: #fff;
+  color: var(--cv-text);
+  padding: calc(var(--cv-margin) * .8) var(--cv-margin);
+  font-family: var(--cv-font);
+  font-size: var(--cv-size);
+  line-height: var(--cv-lh);
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+  box-sizing: border-box;
+}
+.cv-page * { box-sizing: border-box; }
+.cv-page h1, .cv-page h2, .cv-page p, .cv-page ul { margin: 0; padding: 0; }
+
+/* ---------- Champs modifiables directement sur la feuille ---------- */
+.cv-page [contenteditable] { outline: none; border-radius: 2px; min-width: .6em; display: inline-block; white-space: pre-wrap; }
+.cv-page [contenteditable]:hover { background: rgba(47,111,179,.07); box-shadow: 0 0 0 1px rgba(47,111,179,.25); }
+.cv-page [contenteditable]:focus { background: rgba(47,111,179,.1); box-shadow: 0 0 0 1px rgba(47,111,179,.6); }
+.cv-page [contenteditable]:empty::before { content: attr(data-ph); color: #aab0ba; }
+.cv-page .block-edit { display: block; }
+
+/* ---------- En-tête ---------- */
+.cv-header { display: flex; align-items: center; gap: 5mm; margin-bottom: calc(3mm * var(--cv-gap)); }
+.cv-header .cv-id { flex: 1; min-width: 0; }
+.cv-name { font-size: 1.9em; font-weight: 700; line-height: 1.1; letter-spacing: .02em; }
+.cv-title { font-size: 1.12em; font-weight: 700; margin-top: .8mm; color: var(--cv-accent); }
+.cv-contact { margin-top: 1.2mm; font-size: .94em; }
+.cv-contact .sep { color: #9aa0a8; margin: 0 .5em; }
+.cv-photo { flex: none; width: 28mm; height: 28mm; overflow: hidden; background: #e8ebef; position: relative; }
+.cv-photo img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.cv-photo.round { border-radius: 50%; }
+
+/* ---------- Sections ---------- */
+.cv-section { margin-top: calc(2.8mm * var(--cv-gap)); }
+.cv-section h2 {
+  font-size: 1.06em; font-weight: 700; color: var(--cv-accent);
+  border-bottom: .6pt solid var(--cv-accent); padding-bottom: .4mm;
+  margin-bottom: calc(1.5mm * var(--cv-gap)); letter-spacing: .05em;
+}
+.cv-page.upper .cv-section h2 { text-transform: uppercase; }
+.cv-summary { text-align: justify; }
+.cv-rythme { margin-top: .8mm; }
+.cv-entry { margin-bottom: calc(1.8mm * var(--cv-gap)); break-inside: avoid; }
+.cv-entry:last-child { margin-bottom: 0; }
+.cv-line { display: flex; justify-content: space-between; align-items: baseline; gap: 4mm; }
+.cv-line > .l { flex: 1; min-width: 0; }
+.cv-line > .r { flex: none; text-align: right; white-space: nowrap; }
+.cv-org { font-weight: 700; }
+.cv-role { font-style: italic; }
+.cv-bullets { padding-left: 4.2mm !important; margin-top: .4mm !important; list-style: disc; }
+.cv-bullets li { margin: .2mm 0; padding-left: .4mm; }
+.cv-bullets li::marker { color: var(--cv-accent); }
+.cv-bullets li > [contenteditable] { display: inline; }
+.cv-skill { margin-bottom: .5mm; }
+.cv-inline > .item + .item::before { content: "  |  "; white-space: pre; color: #9aa0a8; }
+
+/* ==========================================================================
+   Modèle 1 — Finance / M&A / Conseil : ultra-sobre, dense, filets fins noirs
+   ========================================================================== */
+.tpl-finance .cv-header { text-align: center; }
+.tpl-finance .cv-name { text-transform: uppercase; letter-spacing: .06em; font-size: 1.75em; }
+.tpl-finance .cv-title { color: var(--cv-accent); }
+.tpl-finance .cv-section h2 { color: var(--cv-text); border-bottom-color: var(--cv-text); }
+/* Petite photo facultative : posée en haut à droite, le nom reste centré */
+.tpl-finance .cv-header { position: relative; }
+.tpl-finance .cv-header .cv-photo { position: absolute; right: 0; top: 50%; transform: translateY(-50%); }
+.tpl-finance .cv-header.avec-photo .cv-id { padding: 0 23mm; }
+
+/* ==========================================================================
+   Modèle 2 — Moderne / Structuré : photo, nom en couleur, titres avec filet
+   ========================================================================== */
+.tpl-moderne .cv-header { flex-direction: row-reverse; border-bottom: 2pt solid var(--cv-accent); padding-bottom: 3mm; }
+.tpl-moderne .cv-name { color: var(--cv-accent); font-size: 2.1em; }
+.tpl-moderne .cv-title { color: var(--cv-text); }
+.tpl-moderne .cv-section h2 { border-bottom: 0; display: flex; align-items: center; gap: 2.5mm; font-size: 1.15em; }
+.tpl-moderne .cv-section h2::after { content: ""; flex: 1; height: .6pt; background: #c9ced6; }
+.tpl-moderne .cv-org { color: var(--cv-accent); }
+
+/* ==========================================================================
+   Modèle 3 — RH / Paie / SIRH : sobre, barre de couleur, outils mis en avant
+   ========================================================================== */
+.tpl-rh .cv-header { border-left: 3pt solid var(--cv-accent); padding-left: 4mm; }
+.tpl-rh .cv-name { font-size: 1.85em; }
+.tpl-rh .cv-section h2 {
+  border-bottom: 0; border-left: 2.5pt solid var(--cv-accent);
+  padding: .4mm 0 .4mm 2.5mm; font-size: 1.04em;
+  background: color-mix(in srgb, var(--cv-accent) 7%, white);
+}
+.tpl-rh .cv-skill.outils {
+  border: .6pt solid color-mix(in srgb, var(--cv-accent) 35%, white);
+  border-radius: 1.5mm; padding: 1mm 2mm; margin-bottom: 1.2mm;
+}
+.tpl-rh .cv-skill.outils b { color: var(--cv-accent); }
+
+/* ==========================================================================
+   Repère de fin de page (aperçu uniquement) : gris, rouge si dépassement
+   ========================================================================== */
+.page-limit { position: absolute; left: -12px; right: -12px; top: 297mm; border-top: 1.5px dashed #9ca3af; pointer-events: none; }
+.page-limit span { position: absolute; right: 0; top: 3px; background: #f3f4f6; color: #6b7280; font: 600 11px Inter, sans-serif; padding: 0 4px; }
+.page-limit.depasse { border-top: 2px dashed #dc2626; }
+.page-limit.depasse span { color: #dc2626; }
+
+/* ==========================================================================
+   Impression → PDF vectoriel A4 : seule la feuille de #print-root est imprimée
+   ========================================================================== */
+#print-root { display: none; }
+@media print {
+  @page { size: A4; margin: 0; }
+  html, body, #root { height: auto; background: #fff !important; }
+  #root > * { display: none !important; }
+  #root > #print-root { display: block !important; }
+  #print-root .cv-page { height: 297mm; min-height: 0; overflow: hidden; }
+}
+
+/* Surlignage des mots-clés trouvés (analyseur) */
+mark.cv-surligne { background: #bbf7d0; color: inherit; border-radius: 2px; padding: 0 1px; }
+@media print { mark.cv-surligne { background: none; } }

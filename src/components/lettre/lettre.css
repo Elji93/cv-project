@@ -1,0 +1,14 @@
+/* ==========================================================================
+   Lettre de motivation A4 : reprend les variables et l'en-tête du CV
+   (couleur, police, modèle), avec un texte un peu plus aéré.
+   Les mêmes valeurs sont reprises dans l'export Word (exportLettreWord.ts).
+   ========================================================================== */
+.lettre-page { font-size: max(var(--cv-size), 10.5pt); line-height: 1.38; padding: 16mm 20mm; }
+.lettre-page .cv-header { margin-bottom: 9mm; font-size: var(--cv-size); line-height: var(--cv-lh); }
+/* Destinataire en haut à droite (usage français) */
+.lt-dest { margin: 0 0 6mm auto; width: 75mm; }
+.lettre-page .lt-date { text-align: right; margin: 0 0 7mm; }
+.lettre-page .lt-objet { margin: 0 0 6mm; }
+.lettre-page .lt-corps p { margin: 0 0 3.2mm; text-align: justify; hyphens: auto; }
+.lt-vide { color: #aab0ba; font-style: italic; }
+.lettre-page .lt-signature { margin: 9mm 0 0 auto; width: 75mm; font-weight: 700; }

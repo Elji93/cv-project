@@ -1,0 +1,102 @@
+/* ==========================================================================
+   Feuille CV A4 — mise en page ATS (une colonne, texte réel, pas de tableaux)
+   ========================================================================== */
+.cv-page {
+  --cv-accent: #1f3a5f;
+  --cv-font: "Calibri", "Carlito", Arial, sans-serif;
+  --cv-size: 10pt;
+  --cv-lh: 1.25;
+  --cv-margin: 14mm;
+  --cv-gap: 1;
+  --cv-text: #1a1a1a;
+  width: 210mm; height: 297mm; overflow: hidden;
+  background: #fff; color: var(--cv-text);
+  padding: calc(var(--cv-margin) * .85) var(--cv-margin);
+  font-family: var(--cv-font); font-size: var(--cv-size); line-height: var(--cv-lh);
+  -webkit-print-color-adjust: exact; print-color-adjust: exact;
+}
+.cv-page.measuring { height: auto; overflow: visible; }
+.cv-page * { box-sizing: border-box; }
+.cv-page p, .cv-page ul, .cv-page h1, .cv-page h2, .cv-page h3 { margin: 0; }
+
+/* Edition directe */
+.cv-page [contenteditable] { outline: none; border-radius: 2px; min-width: 8px; }
+.cv-page [contenteditable]:hover { background: rgba(47, 111, 179, .07); box-shadow: 0 0 0 1px rgba(47,111,179,.25); }
+.cv-page [contenteditable]:focus { background: rgba(47, 111, 179, .10); box-shadow: 0 0 0 1px rgba(47,111,179,.6); }
+.cv-page [contenteditable]:empty::before { content: attr(data-ph); color: #b0b6c0; }
+.cv-page.no-edit [contenteditable]:hover { background: none; box-shadow: none; }
+
+/* En-tête */
+.cv-header { display: flex; align-items: center; gap: 5mm; margin-bottom: calc(3.2mm * var(--cv-gap)); }
+.cv-header .id { flex: 1; min-width: 0; }
+.cv-name { font-size: 2.05em; font-weight: 700; letter-spacing: .3px; line-height: 1.1; color: var(--cv-accent); }
+.cv-title { font-size: 1.12em; font-weight: 600; margin-top: .6mm; }
+.cv-contact { margin-top: 1.2mm; font-size: .95em; }
+.cv-contact .sep { margin: 0 .45em; color: #999; }
+.cv-photo { flex: none; width: 27mm; height: 27mm; object-fit: cover; background: #eee; }
+.cv-photo.round { border-radius: 50%; }
+.cv-photo.rounded { border-radius: 3mm; }
+
+/* Sections */
+.cv-section { margin-top: calc(3mm * var(--cv-gap)); }
+.cv-section h2 {
+  font-size: 1.08em; font-weight: 700; text-transform: uppercase; letter-spacing: .6px;
+  color: var(--cv-accent); border-bottom: .7pt solid var(--cv-accent);
+  padding-bottom: .5mm; margin-bottom: calc(1.6mm * var(--cv-gap));
+}
+.cv-summary { text-align: justify; }
+
+.cv-entry { margin-bottom: calc(2mm * var(--cv-gap)); break-inside: avoid; }
+.cv-entry:last-child { margin-bottom: 0; }
+.cv-line { display: flex; justify-content: space-between; gap: 4mm; align-items: baseline; }
+.cv-line .l { flex: 1; min-width: 0; }
+.cv-line .r { flex: none; text-align: right; white-space: nowrap; }
+.cv-org { font-weight: 700; }
+.cv-role { font-style: italic; }
+.cv-dates { font-weight: 400; }
+.cv-loc { }
+.cv-bullets { padding-left: 4.2mm; margin-top: .5mm; }
+.cv-bullets li { margin: .25mm 0; padding-left: .5mm; }
+.cv-bullets li::marker { color: var(--cv-accent); }
+.cv-details { margin-top: .4mm; }
+
+.cv-skill { margin-bottom: .6mm; }
+.cv-skill b { font-weight: 700; }
+.cv-inline-list .item + .item::before { content: " · "; color: #888; }
+.cv-lang .item + .item::before { content: "  |  "; color: #888; white-space: pre; }
+
+/* ----- Modèle : Finance classique (défaut) ----- */
+.tpl-classic .cv-header { flex-direction: row; }
+.tpl-classic .cv-header .id { text-align: center; }
+.tpl-classic .cv-name { text-transform: uppercase; color: var(--cv-text); font-size: 1.85em; letter-spacing: 1px; }
+.tpl-classic .cv-title { color: var(--cv-accent); }
+.tpl-classic .cv-header.has-photo .id { text-align: left; }
+
+/* ----- Modèle : Moderne ----- */
+.tpl-modern .cv-header { flex-direction: row-reverse; border-bottom: 2.2pt solid var(--cv-accent); padding-bottom: 2.5mm; }
+.tpl-modern .cv-name { font-size: 2.2em; }
+.tpl-modern .cv-section h2 { border-bottom: 0; text-transform: none; font-size: 1.2em; letter-spacing: 0; display: flex; align-items: center; gap: 2.5mm; }
+.tpl-modern .cv-section h2::after { content: ""; flex: 1; height: .6pt; background: #c9ced6; }
+.tpl-modern .cv-org { color: var(--cv-accent); }
+
+/* ----- Modèle : Compact (banque / M&A, très dense) ----- */
+.tpl-compact { --cv-gap: .75; }
+.tpl-compact .cv-header .id { text-align: center; }
+.tpl-compact .cv-header.has-photo .id { text-align: left; }
+.tpl-compact .cv-name { font-size: 1.7em; color: var(--cv-text); }
+.tpl-compact .cv-section h2 {
+  border: 0; background: color-mix(in srgb, var(--cv-accent) 12%, white); color: var(--cv-accent);
+  padding: .5mm 2mm; font-size: 1em;
+}
+
+/* ----- Modèle : Élégant ----- */
+.tpl-elegant .cv-header .id { text-align: center; }
+.tpl-elegant .cv-header.has-photo .id { text-align: left; }
+.tpl-elegant .cv-name { font-variant: small-caps; text-transform: none; letter-spacing: 1.5px; font-weight: 600; font-size: 2.1em; }
+.tpl-elegant .cv-section h2 { font-variant: small-caps; text-transform: none; font-weight: 600; font-size: 1.22em; letter-spacing: 1px; border-bottom: 0; position: relative; padding-bottom: 1mm; }
+.tpl-elegant .cv-section h2::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; border-top: .5pt solid var(--cv-accent); border-bottom: .5pt solid var(--cv-accent); height: 1.2pt; }
+
+/* Options */
+.cv-page.titles-plain .cv-section h2 { text-transform: none; }
+.cv-page.align-left .cv-header .id { text-align: left !important; }
+.cv-page.dates-left .cv-line { justify-content: flex-start; }

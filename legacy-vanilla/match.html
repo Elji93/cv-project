@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Comparateur CV / offre — CV Studio</title>
+  <meta name="description" content="Calculez le score de correspondance entre votre CV et une offre d'emploi finance, et obtenez des conseils pour passer les ATS.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/app.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%231f3a5f'/><text x='16' y='21' font-family='Arial' font-weight='700' font-size='13' fill='white' text-anchor='middle'>CV</text></svg>">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="index.html"><span class="brand-logo">CV</span> CV Studio</a>
+    <nav class="nav">
+      <a href="index.html">Éditeur</a>
+      <a href="match.html" class="active">Comparateur CV / offre</a>
+    </nav>
+  </header>
+
+  <main class="match-page">
+    <h1>🎯 Score de correspondance CV / offre</h1>
+    <p class="lead">Collez une offre d'emploi : l'outil repère les mots-clés recherchés par les ATS (compétences finance, outils, langues, certifications…), mesure leur présence dans votre CV et vous donne des conseils concrets. Tout est calculé dans votre navigateur, rien n'est envoyé sur internet.</p>
+
+    <div class="match-inputs">
+      <div class="card">
+        <h3 style="margin-top:0">1. Votre CV</h3>
+        <div class="source-tabs">
+          <button class="btn sm primary" data-src="saved">Mes CV (CV Studio)</button>
+          <button class="btn sm" data-src="file">Fichier PDF / Word</button>
+          <button class="btn sm" data-src="paste">Coller le texte</button>
+        </div>
+        <div class="src-pane" data-pane="saved">
+          <div class="field"><label for="cv-pick">CV à analyser</label><select id="cv-pick"></select></div>
+          <p class="inline-hint">Avec un CV de CV Studio, vous pourrez ajouter en un clic les compétences manquantes.</p>
+        </div>
+        <div class="src-pane" data-pane="file" hidden>
+          <label class="btn">📂 Choisir un fichier (.pdf, .docx, .txt)<input type="file" id="cv-file" accept=".pdf,.docx,.txt" hidden></label>
+          <p class="inline-hint" id="file-status">Le texte est extrait comme le ferait un ATS : si rien n'est extrait, votre PDF est une image illisible pour les robots.</p>
+        </div>
+        <div class="src-pane field" data-pane="paste" hidden>
+          <textarea id="cv-text" placeholder="Collez le texte de votre CV…"></textarea>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3 style="margin-top:0">2. L'offre d'emploi</h3>
+        <div class="field"><label for="offer-title">Intitulé du poste (facultatif)</label><input id="offer-title" placeholder="ex. Analyste M&A — Stage 6 mois"></div>
+        <div class="field"><label for="offer-text">Texte complet de l'offre</label><textarea id="offer-text" placeholder="Collez ici la description du poste : missions, profil recherché, compétences…"></textarea></div>
+      </div>
+    </div>
+
+    <div class="match-actions"><button class="btn primary" id="btn-analyse" style="padding:11px 26px;font-size:15px">Calculer mon score</button></div>
+
+    <div class="results" id="results">
+      <div class="card" id="score-card"></div>
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <div class="card" id="tips-card"></div>
+        <div class="card" id="kw-card"></div>
+      </div>
+    </div>
+  </main>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+  <script src="js/store.js"></script>
+  <script src="js/render.js"></script>
+  <script src="js/match.js"></script>
+</body>
+</html>

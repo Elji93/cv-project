@@ -1,0 +1,14 @@
+# Dépendances et build
+node_modules
+dist
+*.tsbuildinfo
+
+# Divers
+*.log
+.DS_Store
+.env
+.env.*
+
+# Réglages locaux de l'éditeur / de Claude Code
+.claude/
+.vscode/

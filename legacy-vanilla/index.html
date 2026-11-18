@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CV Studio — Créateur de CV finance compatible ATS</title>
+  <meta name="description" content="Créez des CV finance d'une page A4, compatibles ATS, avec photo, couleurs et polices personnalisables. Export PDF et Word.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Carlito:ital,wght@0,400;0,700;1,400&family=EB+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@400;600;700&family=Lato:ital,wght@0,400;0,700;1,400&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Merriweather:ital,wght@0,400;0,700;1,400&family=Open+Sans:ital,wght@0,400;0,600;0,700;1,400&family=Roboto:ital,wght@0,400;0,700;1,400&family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/app.css">
+  <link rel="stylesheet" href="css/cv.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%231f3a5f'/><text x='16' y='21' font-family='Arial' font-weight='700' font-size='13' fill='white' text-anchor='middle'>CV</text></svg>">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="index.html"><span class="brand-logo">CV</span> CV Studio</a>
+    <nav class="nav">
+      <a href="index.html" class="active">Éditeur</a>
+      <a href="match.html" id="nav-match">Comparateur CV / offre</a>
+    </nav>
+    <div class="spacer"></div>
+    <button class="btn ghost" id="btn-pdf" title="Ouvre l'impression : choisissez « Enregistrer au format PDF »">⬇ PDF</button>
+    <button class="btn ghost" id="btn-docx">⬇ Word</button>
+  </header>
+
+  <main class="workspace">
+    <!-- ================= Panneau gauche ================= -->
+    <aside class="sidebar">
+      <div class="cv-switcher">
+        <select id="cv-select" aria-label="CV en cours"></select>
+        <button class="btn icon" id="btn-new" title="Nouveau CV">＋</button>
+        <button class="btn icon" id="btn-manage" title="Gérer mes CV">☰</button>
+      </div>
+
+      <div class="mode-tabs" role="tablist">
+        <button class="active" data-mode="content">✎ Contenu</button>
+        <button data-mode="import">⇩ Import rapide</button>
+        <button data-mode="style">🎨 Mise en forme</button>
+      </div>
+
+      <div class="mode-panel active" id="panel-content">
+        <div class="carousel">
+          <button class="arrow" id="car-prev" aria-label="Section précédente">‹</button>
+          <div class="carousel-track" id="car-track"></div>
+          <button class="arrow" id="car-next" aria-label="Section suivante">›</button>
+        </div>
+        <div id="section-form"></div>
+      </div>
+
+      <div class="mode-panel" id="panel-import">
+        <div class="import-panel">
+          <div class="note">Collez tout votre CV (texte copié depuis Word, LinkedIn, un PDF…) ou un fichier <b>JSON</b> exporté depuis CV Studio. Les sections sont reconnues grâce à leurs titres (<i>Formation, Expérience, Compétences, Langues…</i>). Vérifiez ensuite le résultat dans l'onglet Contenu.</div>
+          <textarea id="import-text" placeholder="Collez votre texte ici…"></textarea>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px">
+            <button class="btn primary" id="imp-current">Remplir le CV actuel</button>
+            <button class="btn" id="imp-new">Créer un nouveau CV</button>
+            <button class="btn" id="imp-example">Voir le format conseillé</button>
+          </div>
+          <hr style="border:0;border-top:1px solid var(--line);margin:16px 0">
+          <div style="display:flex;gap:6px;flex-wrap:wrap">
+            <label class="btn">📂 Ouvrir un fichier JSON<input type="file" id="imp-file" accept=".json,application/json" hidden></label>
+            <button class="btn" id="exp-json">💾 Sauvegarder en JSON</button>
+          </div>
+          <p class="inline-hint">Vos CV sont enregistrés automatiquement dans ce navigateur. Le JSON permet de les sauvegarder ou de les transférer sur un autre ordinateur.</p>
+        </div>
+      </div>
+
+      <div class="mode-panel" id="panel-style">
+        <div class="style-panel" id="style-form"></div>
+      </div>
+    </aside>
+
+    <!-- ================= Aperçu ================= -->
+    <section class="preview-area" id="preview-area">
+      <div class="preview-toolbar">
+        <span class="fit-badge" id="fit-badge">✓ Tient sur 1 page</span>
+        <button class="btn sm" id="btn-fit" title="Réduit automatiquement espacements, taille de police et marges">⤢ Ajuster sur 1 page</button>
+        <span class="inline-hint">Cliquez directement sur la feuille pour modifier le texte.</span>
+        <div class="spacer"></div>
+        <div class="zoom">
+          <button class="btn sm" id="zoom-out">−</button>
+          <span id="zoom-val">100%</span>
+          <button class="btn sm" id="zoom-in">＋</button>
+          <button class="btn sm" id="zoom-fit">Adapter</button>
+        </div>
+        <a class="btn sm primary" id="btn-match" href="match.html">🎯 Comparer à une offre</a>
+      </div>
+      <div class="page-wrap">
+        <div class="page-scaler" id="page-scaler">
+          <div class="page-shadow">
+            <article class="cv-page" id="cv-page" lang="fr"></article>
+            <div class="page-limit" id="page-limit" hidden></div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Modale : nouveau CV -->
+  <div class="modal-backdrop" id="modal-new">
+    <div class="modal">
+      <h3>Nouveau CV</h3>
+      <div class="field"><label for="new-name">Nom du CV (pour vous y retrouver)</label><input id="new-name" placeholder="ex. CV M&A — Banque XYZ"></div>
+      <div class="field"><label>Partir de…</label>
+        <select id="new-from">
+          <option value="blank">Une page vierge</option>
+          <option value="dup">Une copie du CV actuel (pratique pour adapter à une offre)</option>
+          <option value="sample">L'exemple Analyste M&A</option>
+        </select>
+      </div>
+      <div class="actions"><button class="btn" data-close>Annuler</button><button class="btn primary" id="new-ok">Créer</button></div>
+    </div>
+  </div>
+
+  <!-- Modale : gérer les CV -->
+  <div class="modal-backdrop" id="modal-manage">
+    <div class="modal">
+      <h3>Mes CV</h3>
+      <ul class="cv-list" id="cv-list"></ul>
+      <div class="actions"><button class="btn" data-close>Fermer</button></div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="https://unpkg.com/docx@8.5.0/build/index.umd.js" defer></script>
+  <script src="js/store.js"></script>
+  <script src="js/render.js"></script>
+  <script src="js/parser.js"></script>
+  <script src="js/export.js"></script>
+  <script src="js/editor.js"></script>
+</body>
+</html>
