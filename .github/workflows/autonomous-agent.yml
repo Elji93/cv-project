@@ -1,0 +1,204 @@
+name: Agent IA autonome (aider + Gemini)
+
+# Chaque lundi, un agent IA open-source (aider) propose UNE amélioration du site
+# dans une Pull Request. Rien n'est jamais poussé directement sur main.
+on:
+  schedule:
+    - cron: '17 3 * * 1' # lundi 03:17 UTC (04:17 ou 05:17 à Paris)
+  workflow_dispatch:
+    inputs:
+      consigne:
+        description: "Consigne précise pour l'agent (laisser vide = tâche automatique de la semaine)"
+        required: false
+        default: ''
+      modele:
+        description: 'Modèle utilisé par aider'
+        required: false
+        default: 'gemini/gemini-2.5-flash'
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: agent-autonome
+  cancel-in-progress: false
+
+jobs:
+  ameliorer:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      PAT_PRESENT: ${{ secrets.AGENT_PAT != '' }}
+    steps:
+      # 1. Récupération du dépôt et installation
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Installer les dépendances npm
+        run: npm ci
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Installer aider
+        run: python -m pip install --quiet --upgrade aider-chat
+
+      # 2. Nom de la branche dédiée (la branche est créée par l'étape Pull Request,
+      #    main n'est jamais modifiée)
+      - name: Préparer la branche et la consigne
+        id: prep
+        env:
+          CONSIGNE_MANUELLE: ${{ github.event.inputs.consigne }}
+        run: |
+          echo "branche=auto-update-$(date -u +%Y%m%d)-${{ github.run_number }}" >> "$GITHUB_OUTPUT"
+          echo "date=$(date -u +%d/%m/%Y)" >> "$GITHUB_OUTPUT"
+
+          # Une thématique différente chaque semaine (rotation sur 5 semaines)
+          SEMAINE=$(date -u +%V)
+          case $((10#$SEMAINE % 5)) in
+            0) THEME="Trouve et corrige UN bug ou un cas limite (import PDF/Word, dépassement de page, export Word, analyseur ATS). Ajoute un test qui le prouve." ;;
+            1) THEME="Améliore UN point précis de l'interface ou de l'ergonomie (clarté d'un libellé, retour visuel, cohérence des boutons), sans refonte." ;;
+            2) THEME="Enrichis src/data/synonymes.ts avec 10 à 20 nouvelles équivalences français/anglais utiles aux ATS (finance, RH/paie/SIRH ou informatique), sans doublon, et ajoute un test." ;;
+            3) THEME="Améliore l'accessibilité d'UN composant (attributs aria, navigation au clavier, focus visible, contraste)." ;;
+            4) THEME="Ajoute des tests vitest sur une fonction de src/lib/ peu couverte, et corrige-la si un test révèle un bug." ;;
+          esac
+          if [ -n "$CONSIGNE_MANUELLE" ]; then THEME="$CONSIGNE_MANUELLE"; fi
+          echo "theme<<FIN" >> "$GITHUB_OUTPUT"; echo "$THEME" >> "$GITHUB_OUTPUT"; echo "FIN" >> "$GITHUB_OUTPUT"
+
+          cat > /tmp/consigne.txt <<EOF
+          Tu es un agent autonome qui maintient ce dépôt. Respecte STRICTEMENT les règles de AGENTS.md.
+
+          Tâche de cette exécution : $THEME
+
+          Contraintes :
+          - Une seule amélioration ciblée, avec un diff court et propre.
+          - Ne modifie ni .github/, ni AGENTS.md, ni package.json, ni package-lock.json, ni vite.config.ts.
+          - N'ajoute aucune dépendance, aucun back-end, aucun appel réseau, aucune clé API.
+          - Code et commentaires en français, comme le reste du projet.
+          - npm run build et npm test doivent passer.
+          - Termine par un résumé de 3 à 5 phrases en français : ce qui a changé, pourquoi, comment le vérifier.
+          EOF
+
+      # 3. L'agent travaille (sans commit : les changements restent dans l'arbre de travail)
+      - name: Lancer aider
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          MODELE: ${{ github.event.inputs.modele || 'gemini/gemini-2.5-flash' }}
+        run: |
+          if [ -z "$GEMINI_API_KEY" ]; then
+            echo "::error::Le secret GEMINI_API_KEY n'est pas configuré."; exit 1
+          fi
+          aider \
+            --model "$MODELE" \
+            --yes-always \
+            --no-auto-commits \
+            --no-dirty-commits \
+            --no-gitignore \
+            --no-suggest-shell-commands \
+            --no-detect-urls \
+            --no-check-update \
+            --no-show-model-warnings \
+            --analytics-disable \
+            --no-pretty --no-stream \
+            --map-tokens 4096 \
+            --read AGENTS.md \
+            --auto-test --test-cmd "npm run build && npm test" \
+            --message-file /tmp/consigne.txt 2>&1 | tee /tmp/aider.log || true
+
+      # 4. Garde-fous : on annule toute modification interdite, puis build + tests obligatoires
+      - name: Annuler les modifications de fichiers protégés
+        run: |
+          rm -rf .aider*
+          git checkout HEAD -- .github AGENTS.md package.json package-lock.json vite.config.ts
+          git clean -fdq -- .github
+          git status --short
+
+      - name: Vérifier qu'il y a des changements
+        id: diff
+        run: |
+          if [ -z "$(git status --porcelain)" ]; then
+            echo "Aucune modification proposée par l'agent cette fois-ci."
+            echo "changements=non" >> "$GITHUB_OUTPUT"
+          else
+            echo "changements=oui" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Garde-fou — build
+        if: steps.diff.outputs.changements == 'oui'
+        run: npm run build
+
+      - name: Garde-fou — tests
+        if: steps.diff.outputs.changements == 'oui'
+        run: npm test
+
+      # 5. Pull Request (seulement si build et tests ont réussi)
+      - name: Rédiger la description de la Pull Request
+        if: steps.diff.outputs.changements == 'oui'
+        env:
+          THEME: ${{ steps.prep.outputs.theme }}
+        run: |
+          git add -A
+          {
+            echo "## 🤖 Amélioration automatique du ${{ steps.prep.outputs.date }}"
+            echo
+            echo "**Tâche confiée à l'agent :** $THEME"
+            echo
+            echo "### Vérifications automatiques"
+            echo "- ✅ \`npm run build\` réussi"
+            echo "- ✅ \`npm test\` réussi"
+            echo "- ✅ Fichiers protégés (.github, AGENTS.md, package*.json, vite.config.ts) inchangés"
+            echo
+            echo "### Fichiers modifiés"
+            echo '```'
+            git diff --cached --stat
+            echo '```'
+            echo
+            echo "### Comment relire"
+            echo "Ouvre l'onglet **Files changed**, puis teste l'aperçu après fusion. En cas de doute, ferme simplement cette PR : rien n'est perdu."
+            echo
+            echo "<details><summary>Journal de l'agent (fin)</summary>"
+            echo
+            echo '```'
+            tail -n 60 /tmp/aider.log | sed 's/```/ʼʼʼ/g'
+            echo '```'
+            echo "</details>"
+            echo
+            echo "_Modèle : ${{ github.event.inputs.modele || 'gemini/gemini-2.5-flash' }} · exécution [#${{ github.run_number }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})_"
+          } > /tmp/pr-body.md
+          git reset -q
+
+      - name: Créer la Pull Request
+        id: pr
+        if: steps.diff.outputs.changements == 'oui'
+        uses: peter-evans/create-pull-request@v7
+        with:
+          # Avec AGENT_PAT, la PR déclenche la CI et peut être fusionnée automatiquement.
+          # Sans, le jeton par défaut suffit pour créer la PR (fusion manuelle).
+          token: ${{ secrets.AGENT_PAT || secrets.GITHUB_TOKEN }}
+          branch: ${{ steps.prep.outputs.branche }}
+          base: main
+          delete-branch: true
+          commit-message: 'auto: ${{ steps.prep.outputs.theme }}'
+          title: '🤖 Amélioration auto du ${{ steps.prep.outputs.date }}'
+          body-path: /tmp/pr-body.md
+          add-paths: |
+            src/**
+            index.html
+            README.md
+
+      # 6. Fusion automatique (seulement si AGENT_PAT existe et que l'auto-merge est
+      #    autorisé dans les paramètres du dépôt). La fusion attend que la CI soit verte.
+      - name: Activer la fusion automatique
+        if: steps.pr.outputs.pull-request-number != '' && env.PAT_PRESENT == 'true'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.AGENT_PAT }}
+        run: gh pr merge ${{ steps.pr.outputs.pull-request-number }} --auto --squash --repo ${{ github.repository }}

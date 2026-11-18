@@ -1,0 +1,31 @@
+version: 2
+updates:
+  # Paquets npm : une PR groupée par semaine pour les mises à jour mineures et correctives,
+  # une PR séparée par paquet pour les mises à jour majeures (plus risquées).
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: tuesday
+      time: '06:00'
+      timezone: Europe/Paris
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: 'deps'
+    groups:
+      mineures-et-correctifs:
+        update-types: [minor, patch]
+
+  # Actions GitHub utilisées dans les workflows
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: tuesday
+      time: '06:00'
+      timezone: Europe/Paris
+    commit-message:
+      prefix: 'ci'
+    groups:
+      actions:
+        patterns: ['*']
