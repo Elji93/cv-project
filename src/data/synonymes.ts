@@ -184,17 +184,14 @@ export const SYNONYMES: GroupeSynonymes[] = [
   { libelle: 'Data science / IA', categorie: 'Domaine', termes: ['data science', 'machine learning', 'apprentissage automatique', 'intelligence artificielle', 'artificial intelligence', 'deep learning', 'apprentissage profond', 'ia generative', 'generative ai', 'llm'] },
   { libelle: 'Support informatique', categorie: 'Domaine', termes: ['support informatique', 'it support', 'service desk', 'help desk', 'support technique', 'technical support', 'support niveau 1', 'support niveau 2', 'support n1', 'support n2', 'assistance informatique'] },
   { libelle: 'Gestion des services IT (ITSM)', categorie: 'Domaine', termes: ['itsm', 'it service management', 'gestion des services informatiques', 'gestion des incidents', 'incident management', 'gestion des problemes', 'problem management', 'gestion des changements', 'change management itil'] },
-  // ----- Nouveaux domaines & techniques (IT / Cloud / Organisation)
-  { libelle: 'FinOps', categorie: 'Domaine', termes: ['finops', 'cloud financial management', 'gestion financiere du cloud'] },
-  { libelle: 'Numérique responsable / Green IT', categorie: 'Domaine', termes: ['green it', 'numerique responsable', 'eco-conception logicielle', 'sustainable it'] },
-  { libelle: 'Web3 / Blockchain', categorie: 'Domaine', termes: ['web3', 'blockchain', 'crypto', 'smart contracts', 'contrats intelligents'] },
-  { libelle: 'Tech Lead', categorie: 'Technique', termes: ['tech lead', 'lead developer', 'lead dev', 'chef de file technique'] },
-  { libelle: 'Product Manager', categorie: 'Technique', termes: ['product manager', 'pm', 'product owner', 'po'] },
-  { libelle: 'Agile Coach', categorie: 'Technique', termes: ['agile coach', 'coach agile', 'scrum master', 'facilitateur agile'] },
-  { libelle: 'DPO', categorie: 'Technique', termes: ['dpo', 'data protection officer', 'delegue a la protection des donnees', 'correspondant informatique et libertes', 'cil'] },
-  { libelle: 'CTO', categorie: 'Technique', termes: ['cto', 'chief technology officer', 'directeur technique', 'directrice technique'] },
-  { libelle: 'Prompt Engineer', categorie: 'Technique', termes: ['prompt engineer', 'ingenieur de prompt', 'ingenieure de prompt', 'prompt engineering'] },
-  { libelle: 'No-code / Low-code', categorie: 'Technique', termes: ['no-code', 'nocode', 'low-code', 'lowcode', 'bubble', 'make', 'zapier'] },
+  // ----- Cloud, numérique responsable, données personnelles, IA, no-code
+  //  (les intitulés de postes — Tech Lead, Product Manager, CTO… — sont dans INTITULES_POSTES)
+  { libelle: 'FinOps', categorie: 'Domaine', termes: ['finops', 'cloud financial management', 'gestion financiere du cloud', 'optimisation des couts cloud', 'cloud cost optimization'] },
+  { libelle: 'Numérique responsable / Green IT', categorie: 'Domaine', termes: ['green it', 'numerique responsable', 'eco-conception logicielle', 'ecoconception logicielle', 'sustainable it', 'sobriete numerique'] },
+  { libelle: 'Blockchain / Web3', categorie: 'Domaine', termes: ['blockchain', 'web3', 'smart contracts', 'smart contract', 'contrats intelligents', 'solidity'] },
+  { libelle: 'Protection des données (DPO)', categorie: 'Domaine', termes: ['dpo', 'data protection officer', 'delegue a la protection des donnees', 'protection des donnees personnelles', 'data privacy'] },
+  { libelle: 'Prompt engineering / IA générative', categorie: 'Technique', termes: ['prompt engineering', 'ingenierie de prompt', 'ingenierie des prompts', 'retrieval augmented generation'] },
+  { libelle: 'No-code / low-code', categorie: 'Outil', termes: ['no-code', 'nocode', 'low-code', 'lowcode', 'zapier', 'power automate', 'power apps', 'airtable', 'make.com'] },
   // ----- Technique : cybersécurité
   { libelle: 'Gestion des vulnérabilités', categorie: 'Technique', termes: ['gestion des vulnerabilites', 'vulnerability management', 'scan de vulnerabilites', 'vulnerability assessment', 'audit de vulnerabilites', 'patch management', 'gestion des correctifs', 'cve'] },
   { libelle: 'Réponse à incident', categorie: 'Technique', termes: ['reponse a incident', 'reponse aux incidents', 'incident response', 'gestion des incidents de securite', 'security incident', 'csirt', 'cert-fr', 'forensic', 'forensics', 'investigation numerique', 'analyse forensique'] },
@@ -340,10 +337,13 @@ export const INTITULES_POSTES: { libelle: string; termes: string[] }[] = [
   { libelle: 'Data engineer / scientist', termes: ['data engineer', 'ingenieur data', 'ingenieure data', 'ingenieur de donnees', 'data scientist', 'machine learning engineer', 'ml engineer'] },
   { libelle: 'Chef de projet informatique', termes: ['chef de projet informatique', 'cheffe de projet informatique', 'chef de projet it', 'it project manager', 'chef de projet si', 'chef de projet technique', 'cheffe de projet technique', 'technical project manager', 'chef de projet moa', 'chef de projet amoa', 'product owner', 'scrum master'] },
   { libelle: 'DSI / responsable informatique', termes: ['dsi', 'directeur des systemes d information', 'directrice des systemes d information', 'cio', 'responsable informatique', 'it manager', 'responsable infrastructure', 'head of it'] },
-  // Nouveaux intitulés de postes
-  { libelle: 'Tech Lead / Lead Developer', termes: ['tech lead', 'lead developer', 'lead dev'] },
-  { libelle: 'Product Manager / Owner', termes: ['product manager', 'product owner'] },
-  { libelle: 'FinOps Manager', termes: ['finops manager', 'expert finops', 'experte finops'] },
+  { libelle: 'Tech Lead / Lead Developer', termes: ['tech lead', 'lead developer', 'lead developpeur', 'lead developpeuse', 'lead dev', 'chef de file technique'] },
+  { libelle: 'Product Manager', termes: ['product manager', 'responsable produit', 'product management'] },
+  { libelle: 'Coach agile', termes: ['coach agile', 'agile coach', 'facilitateur agile', 'facilitatrice agile'] },
+  { libelle: 'CTO / directeur technique', termes: ['cto', 'chief technology officer', 'directeur technique', 'directrice technique'] },
+  { libelle: 'DPO', termes: ['dpo', 'data protection officer', 'delegue a la protection des donnees', 'deleguee a la protection des donnees'] },
+  { libelle: 'Prompt engineer', termes: ['prompt engineer', 'ingenieur prompt', 'ingenieure prompt', 'ingenieur de prompt', 'ingenieure de prompt'] },
+  { libelle: 'FinOps', termes: ['finops manager', 'finops analyst', 'consultant finops', 'consultante finops', 'expert finops', 'experte finops'] },
   // Autres secteurs (secteurs.ts)
   ...INTITULES_SECTEURS,
 ];
