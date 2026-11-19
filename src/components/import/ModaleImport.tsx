@@ -39,8 +39,19 @@ export function ModaleImport({ onFermer }: { onFermer: () => void }) {
       const nom = f.name.toLowerCase();
       if (nom.endsWith('.pdf')) analyser(await lirePdf(f));
       else if (nom.endsWith('.docx')) analyser(await lireDocx(f));
+      else if (nom.endsWith('.odt')) analyser(await (await import('../../lib/import/lireOdt')).lireOdt(f));
       else if (nom.endsWith('.txt')) analyser({ lignes: lignesDepuisTexte(await f.text()), photo: null });
-      else throw new Error('Format non pris en charge : choisissez un PDF, un .docx ou un .txt. (Les anciens .doc doivent être réenregistrés en .docx.)');
+      else if (nom.endsWith('.xlsx') || nom.endsWith('.ods')) {
+        // Tableau CV Studio rempli : chaque case va directement au bon endroit
+        const [{ lireTableur }, { estTableauCv, resultatDepuisTableau }] = await Promise.all([import('../../lib/tableur/lireTableur'), import('../../lib/tableur/modeleCv')]);
+        const feuilles = await lireTableur(await f.arrayBuffer());
+        if (!estTableauCv(feuilles)) throw new Error('Ce classeur ne ressemble pas au tableau CV Studio. Téléchargez le tableau à remplir ci-dessous, puis importez-le une fois rempli.');
+        const { resultat: r, lignes: l } = resultatDepuisTableau(feuilles);
+        setLignes(l);
+        setResultat(r);
+      }
+      else if (nom.endsWith('.doc') || nom.endsWith('.xls') || nom.endsWith('.rtf')) throw new Error('Ancien format : ouvrez le fichier et réenregistrez-le en .docx (Word) / .odt (LibreOffice), ou .xlsx / .ods pour un tableau.');
+      else throw new Error('Format non pris en charge : choisissez un PDF, un document Word (.docx), LibreOffice (.odt), un tableau (.xlsx, .ods) ou un .txt.');
     } catch (e) {
       console.error(e);
       setErreur((e as Error).message || 'Lecture impossible.');
@@ -81,7 +92,7 @@ export function ModaleImport({ onFermer }: { onFermer: () => void }) {
   };
 
   return (
-    <Modale titre="Importer un CV (PDF, Canva, Word)" onFermer={onFermer} large={!!resultat}>
+    <Modale titre="Importer un CV (PDF, Canva, Word, LibreOffice, tableau)" onFermer={onFermer} large={!!resultat}>
       {!resultat || !lignes ? (
         <EtapeChoixFichier chargement={chargement} erreur={erreur} onFichier={lireFichier} onTexte={t => { setSource('texte collé'); analyser({ lignes: lignesDepuisTexte(t), photo: null }); }} />
       ) : (

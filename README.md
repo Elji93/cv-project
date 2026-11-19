@@ -34,11 +34,12 @@ Elle comprend aussi un **analyseur de score ATS** (critères de l'APEC), un édi
 - **Coordonnées masquables** (email, téléphone, ville, LinkedIn, site / GitHub, date de naissance) : bouton œil à côté de chaque champ dans « Infos & photo ». L'information reste enregistrée mais n'apparaît ni sur le CV, ni dans le PDF, le Word ou la lettre ; l'analyseur la considère absente et le signale sans insister. Une section entière se masque dans « Mise en forme › Ordre des sections ».
 - **Mention RQTH facultative** (« Infos & photo ») : ne pas l'indiquer (par défaut), dans l'en-tête avec les coordonnées, en bas du CV, ou seulement dans la lettre de motivation (phrase proposée dans le brouillon, bouton « Ajouter la phrase RQTH » pour une lettre déjà écrite). Sur le CV, la mention est « RQTH » seule, sans précision ; sur une version anglaise du CV, « Recognised disability (RQTH) », et la phrase de la lettre est en anglais. À l'import, une mention RQTH n'est jamais placée d'office : elle va dans « À classer », d'où « Envoyer vers… › Mention RQTH » active l'option. L'analyseur signale les éléments en réserve qui correspondent à l'offre, et la carte « Booster » propose de remettre sur le CV une certification gardée en réserve.
 - **Annuler / rétablir** (50 actions).
-- **Import d'un CV existant** (PDF, y compris Canva, ou Word .docx) :
+- **Import d'un CV existant** (PDF, y compris Canva, Word .docx, LibreOffice .odt ; Google Docs : télécharger en .docx) :
   - le texte est réparti dans les sections ;
   - les colonnes latérales sont reconnues ;
   - la photo est extraite.
   - Un écran de vérification permet ensuite de corriger le résultat, et ce qui n'a pas pu être classé reste disponible dans « À classer ».
+  - **Tableau à remplir** : dans la fenêtre d'import, « Tableau vide (avec exemples) » ou « Tableau rempli avec le CV ouvert » télécharge un classeur .xlsx (un onglet par rubrique : infos et profil, expériences, formations, compétences, langues avec liste déroulante des niveaux, certifications). Il se remplit dans Excel, LibreOffice Calc ou Google Sheets, puis se réimporte (.xlsx ou .ods) : chaque case va directement au bon endroit. Les lignes grises « Exemple » sont ignorées ; plusieurs missions s'écrivent sur plusieurs lignes de la cellule ou sur les lignes suivantes ; les dates converties par le tableur sont relues ; ce qui n'est pas compris va dans « À classer ». Le classeur est écrit et lu sans bibliothèque supplémentaire (un .xlsx est un zip de fichiers XML, lu avec JSZip).
   - Chaque texte (ou ligne du texte extrait) peut être envoyé vers une **sous-rubrique précise** : un champ des infos perso (nom, ville, date de naissance…), les missions, le poste ou les dates d'une expérience existante, l'école d'une formation, un groupe de compétences, ou une nouvelle entrée détectée automatiquement.
 
 ### Exports
@@ -168,7 +169,8 @@ src/
   lib/              logique sans React
     ats/            normalisation, extraction des mots-clés, scoring APEC, conseils, prompt IA,
                     recommandations de certifications
-    import/         lecture PDF (pdf.js) et Word (mammoth), découpage en sections, classement
+    import/         lecture PDF (pdf.js), Word (mammoth) et LibreOffice .odt, découpage en sections, classement
+    tableur/        tableau à remplir : écriture .xlsx, lecture .xlsx / .ods, correspondance avec le CV
     export/         PDF, Word (CV et lettre), JSON, noms de fichiers
     lettre.ts       lettre de motivation et suivi des candidatures
   components/       commun · feuille (A4) · editeur · style · gestionCV · import ·
@@ -189,6 +191,7 @@ npm test
   - barème 20 / 40 / 25 / 15 ;
   - conseils et prompt IA.
 - **Import** (`import`) : CV Canva sur une ou deux colonnes, dates, formations, photo.
+- **Tableau et LibreOffice** (`tableur`) : classeur valide, aller-retour CV → tableau → CV, lignes « Exemple » ignorées, dates Excel / LibreOffice, missions sur plusieurs lignes, fichiers .xlsx (textes partagés) et .ods, document .odt (zones de texte, listes, tableaux).
 - **Informatique** (`informatique`) :
   - offre réseau en anglais validée par un CV en français ;
   - SOC / SIEM / EDR ;

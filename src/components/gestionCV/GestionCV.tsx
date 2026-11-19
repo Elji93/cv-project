@@ -24,7 +24,7 @@ export function GestionCV() {
         {cvs.map(c => <option key={c.id} value={c.id}>{c.nom}{nomComplet(c) ? ` — ${nomComplet(c)}` : ''}</option>)}
       </select>
       <button className="icon-btn border border-gray-200" title="Nouveau CV" aria-label="Nouveau CV" onClick={() => setOuverte('nouveau')}><Plus size={16} /></button>
-      <button className="icon-btn border border-gray-200" title="Importer un CV (PDF, Canva, Word)" aria-label="Importer un CV" onClick={() => setOuverte('import')}><FileUp size={16} /></button>
+      <button className="icon-btn border border-gray-200" title="Importer un CV (PDF, Canva, Word, LibreOffice, tableau Excel)" aria-label="Importer un CV" onClick={() => setOuverte('import')}><FileUp size={16} /></button>
       <button className="icon-btn border border-gray-200 text-red-600" title="Supprimer ce CV" aria-label="Supprimer ce CV"
         onClick={async () => { if (await confirmer({ titre: 'Supprimer ce CV ?', message: `« ${nomActif} »\nVous pourrez annuler avec Ctrl+Z tant que la page reste ouverte.`, libelleOk: 'Supprimer', danger: true })) supprimer(actif); }}>
         <Trash2 size={16} />

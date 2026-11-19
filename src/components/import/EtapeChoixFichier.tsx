@@ -1,6 +1,7 @@
-// Étape 1 de l'import : déposer un fichier (PDF, Word, Canva) ou coller le texte
+// Étape 1 de l'import : déposer un fichier (PDF, Word, LibreOffice, Canva, tableau) ou coller le texte
 import { useState } from 'react';
 import { ClipboardPaste, FileUp, Loader2, ShieldCheck } from 'lucide-react';
+import { BlocTableau } from './BlocTableau';
 
 interface Props {
   chargement: boolean;
@@ -21,11 +22,14 @@ export function EtapeChoixFichier({ chargement, erreur, onFichier, onTexte }: Pr
         className={`flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed p-8 text-center cursor-pointer transition ${survol ? 'border-brand-2 bg-sky-50' : 'border-gray-300 hover:border-gray-400'}`}>
         {chargement ? <Loader2 className="animate-spin text-brand-2" size={30} /> : <FileUp className="text-brand-2" size={30} />}
         <b>{chargement ? 'Lecture du fichier…' : 'Déposez votre CV ici ou cliquez pour le choisir'}</b>
-        <span className="text-xs text-gray-500">PDF (y compris exporté depuis Canva), Word .docx ou texte .txt</span>
-        <input type="file" accept=".pdf,.docx,.txt,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain" hidden
+        <span className="text-xs text-gray-500">PDF (y compris Canva), Word .docx, LibreOffice .odt, texte .txt, ou le tableau CV Studio rempli (.xlsx, .ods)</span>
+        <span className="text-[11px] text-gray-400">Google Docs : Fichier › Télécharger › Microsoft Word (.docx), puis déposez le fichier ici.</span>
+        <input type="file" accept=".pdf,.docx,.odt,.txt,.xlsx,.ods,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.oasis.opendocument.text,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.oasis.opendocument.spreadsheet,text/plain" hidden
           disabled={chargement} onChange={e => { const f = e.target.files?.[0]; if (f) onFichier(f); e.target.value = ''; }} />
       </label>
       {erreur && <p className="text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg p-3 mt-3">{erreur}</p>}
+
+      <BlocTableau />
 
       <details className="mt-4">
         <summary className="cursor-pointer text-sm font-medium text-gray-700 inline-flex items-center gap-1.5"><ClipboardPaste size={15} /> Ou coller le texte du CV</summary>

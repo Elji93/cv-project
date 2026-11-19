@@ -7,7 +7,7 @@ Lis-le en entier avant d'éditer le moindre fichier. En cas de doute, **ne modif
 
 **CV Studio** : application web de création de CV A4 compatibles ATS, avec analyseur de score ATS (critères APEC), lettre de motivation et suivi des candidatures.
 
-- React 18 + Vite + TypeScript + Tailwind CSS, icônes `lucide-react`, état global `zustand` (`src/store/`).
+- React 19 + Vite + TypeScript + Tailwind CSS, icônes `lucide-react`, état global `zustand` (`src/store/`).
 - Hébergée en statique sur **GitHub Pages**, déployée automatiquement à chaque fusion sur `main`.
 - Toutes les données de l'utilisatrice restent dans le `localStorage` de son navigateur.
 
