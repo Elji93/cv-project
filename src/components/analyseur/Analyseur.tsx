@@ -21,6 +21,7 @@ import { BoosterCandidature } from '../commun/BoosterCandidature';
 import { saisirTexte } from '../../store/dialogues';
 import { candidatureVide, lettreVierge } from '../../lib/lettre';
 import { MesureCachee } from '../commun/MesureCachee';
+import { ZoneOffre } from './ZoneOffre';
 
 const CLE_OFFRE = 'cvstudio.v3.offre';
 const CLE_INTITULE = 'cvstudio.v3.intituleOffre';
@@ -103,7 +104,7 @@ export function Analyseur() {
       <p className="text-gray-500 mt-1 mb-5 max-w-3xl">Collez l'offre : votre CV est noté sur 100 selon les critères de tri recommandés par l'APEC. Les synonymes français ↔ anglais sont reconnus. Le score se met à jour en direct. Tout est calculé dans votre navigateur.</p>
 
       <div className="grid lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)] gap-4 mb-4">
-        <div className="card">
+        <div className="card flex flex-col">
           <div className="grid sm:grid-cols-2 gap-2 mb-2">
             <label className="flex flex-col gap-1"><span className="text-xs font-semibold text-gray-500">CV analysé</span>
               <select className="input" value={cv.id} onChange={e => selectionner(e.target.value)}>
@@ -114,17 +115,18 @@ export function Analyseur() {
               <input className="input" placeholder={r?.intitule ? `Détecté : ${r.intitule}` : 'ex. M&A Analyst'} value={intitule} onChange={e => setIntitule(e.target.value)} />
             </label>
           </div>
-          <label className="flex flex-col gap-1">
+          <label className="flex flex-col gap-1 grow">
             <span className="text-xs font-semibold text-gray-500 flex items-center gap-2">
               Texte complet de l'offre
               {langue && <span className="rounded bg-sky-100 text-sky-800 px-1.5 text-[10.5px]">Offre en {langue === 'en' ? 'anglais' : 'français'}</span>}
             </span>
-            <textarea className="input min-h-[230px] leading-relaxed" value={offre} onChange={e => setOffre(e.target.value)}
+            <ZoneOffre value={offre} onChange={setOffre}
               placeholder="Collez ici l'offre : missions, profil recherché, compétences, « exigé », « un plus »…" />
           </label>
           {offre.trim().length > 0 && offre.trim().length < 80 && <p className="text-xs text-amber-700 mt-1">Collez le texte complet de l'offre (au moins quelques lignes).</p>}
         </div>
-        {r ? <CarteScore r={r} /> : (
+        {/* La carte du score garde sa hauteur et reste visible si l'offre est très longue */}
+        {r ? <div className="min-w-0 lg:self-start lg:sticky lg:top-4"><CarteScore r={r} /></div> : (
           <div className="card grid place-items-center text-center text-gray-500 text-sm">Le score apparaîtra ici dès que l'offre sera collée.</div>
         )}
       </div>
@@ -212,7 +214,8 @@ export function Analyseur() {
               </div>
             </div>
           </div>
-          <FeuilleSurlignee cv={cv} termes={termesTrouves} />
+          {/* Le CV garde sa hauteur (pas de grand vide dessous) et reste visible pendant la lecture des conseils */}
+          <div className="min-w-0 lg:self-start lg:sticky lg:top-4"><FeuilleSurlignee cv={cv} termes={termesTrouves} /></div>
         </div>
       )}
 
