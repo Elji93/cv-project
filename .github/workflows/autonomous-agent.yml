@@ -66,7 +66,7 @@ jobs:
           case $((10#$SEMAINE % 5)) in
             0) THEME="Trouve et corrige UN bug ou un cas limite (import PDF/Word, dépassement de page, export Word, analyseur ATS). Ajoute un test qui le prouve." ;;
             1) THEME="Améliore UN point précis de l'interface ou de l'ergonomie (clarté d'un libellé, retour visuel, cohérence des boutons), sans refonte." ;;
-            2) THEME="Enrichis src/data/synonymes.ts avec 10 à 20 nouvelles équivalences français/anglais utiles aux ATS (finance, RH/paie/SIRH ou informatique), sans doublon, et ajoute un test." ;;
+            2) THEME="Enrichis le dictionnaire ATS (src/data/synonymes.ts pour finance, RH/paie/SIRH, informatique ; src/data/secteurs.ts pour les autres secteurs) avec 10 à 20 nouvelles équivalences français/anglais, en respectant les règles du dictionnaire d'AGENTS.md (pas de terme de 2 lettres, pas de mot courant à double sens, pas de doublon, intitulés de postes dans INTITULES_POSTES ou INTITULES_SECTEURS). Ajoute un test qui vérifie que les nouveaux termes sont reconnus dans une offre ET qu'ils ne créent pas de faux mot-clé dans une offre sans rapport." ;;
             3) THEME="Améliore l'accessibilité d'UN composant (attributs aria, navigation au clavier, focus visible, contraste)." ;;
             4) THEME="Ajoute des tests vitest sur une fonction de src/lib/ peu couverte, et corrige-la si un test révèle un bug." ;;
           esac

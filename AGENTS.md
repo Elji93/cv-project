@@ -33,6 +33,12 @@ Lis-le en entier avant d'éditer le moindre fichier. En cas de doute, **ne modif
 - **Styles** : classes Tailwind. Le CSS de la feuille A4 est dans `src/components/feuille/feuille.css` : ne change pas les dimensions A4 (210 × 297 mm).
 - **Compatibilité ATS** des CV produits : une seule colonne, pas de tableau dans le CV, pas d'émoji, texte sélectionnable dans le PDF.
 - **Données de référence** (synonymes FR/EN, verbes d'action, mots vides) : `src/data/`. Les enrichir est une bonne amélioration.
+- **Règles du dictionnaire ATS** (`src/data/synonymes.ts`, `src/data/secteurs.ts`). Chaque terme est cherché comme un mot entier dans les offres et les CV : un terme ambigu crée de faux mots-clés.
+  - **Pas de terme de 2 lettres** (« pm », « po », « ia », « it », « si »…) : ils apparaissent par hasard (« 5 pm », « PO approval »).
+  - **Pas de mot courant à double sens**, ni français ni anglais : « make », « bubble », « crypto », « closing », « formation », « qualité », « stock », « transport », « restauration », « exchange »… Écris l'expression complète (« make.com », « gestion des stocks », « sauvegarde des données »).
+  - **Pas de doublon** : avant d'ajouter un terme, cherche-le dans les deux fichiers (`grep -rin "terme" src/data/`). Un même terme ne doit appartenir qu'à un seul groupe.
+  - **Les métiers vont dans les intitulés** (`INTITULES_POSTES` ou `INTITULES_SECTEURS`), avec les formes masculine, féminine et anglaise, jamais dans les compétences (`SYNONYMES`).
+  - **Test** : les tests de `src/tests/secteurs.test.ts` refusent déjà les doublons et les sigles courts dans `secteurs.ts` ; ajoute un test qui vérifie qu'une offre **sans rapport** ne déclenche pas tes nouveaux mots-clés.
 - **Tests** : `vitest`, dans `src/tests/`. Toute correction de bug ou nouvelle fonction de `src/lib/` doit être accompagnée d'un test.
 - TypeScript strict : pas de `any`, pas de `@ts-ignore`.
 
