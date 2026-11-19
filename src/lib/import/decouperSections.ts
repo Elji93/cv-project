@@ -68,7 +68,8 @@ export function detecterTitre(ligne: LigneImportee, mediane = 10): CleImport | n
 // ---------------------------------------------------------------------------
 const MOIS = "(?:janv(?:ier)?|f[ée]vr?(?:ier)?|mars|avr(?:il)?|mai|juin|juil(?:let)?|ao[uû]t|sept?(?:embre)?|oct(?:obre)?|nov(?:embre)?|d[ée]c(?:embre)?|jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|june?|july?|aug(?:ust)?|september|october|november|december)\\.?";
 // (une année collée à une référence, « CYBER-2026-482 », n'est pas une date)
-const DATE = `(?:(?:${MOIS}\\s*)?(?:\\d{1,2}[/.])?(?<![A-Za-zÀ-ÿ]-)(?:19|20)\\d{2}(?!-\\d{1,3}\\b)|\\d{1,2}/\\d{2}(?![\\d/])|${MOIS}\\s*[-'’]?\\d{2}(?![\\d/]))`;
+// « 05/2025 », « 05.2025 », « 05 / 2025 » et « 05-2025 » (mois-année : un mois de 1 à 12 seulement, pour ne pas lire « 2021-2022 » comme un mois)
+const DATE = `(?:(?:${MOIS}\\s*)?(?:\\d{1,2}\\s?[/.]\\s?|\\b(?:0?[1-9]|1[0-2])-(?=(?:19|20)\\d{2}))?(?<![A-Za-zÀ-ÿ]-)(?:19|20)\\d{2}(?!-\\d{1,3}\\b)|\\d{1,2}/\\d{2}(?![\\d/])|${MOIS}\\s*[-'’]?\\d{2}(?![\\d/]))`;
 const FIN = `(?:${DATE}|aujourd['’ ]?hui|pr[ée]sent|actuel(?:lement)?|en cours|now|today|current)`;
 const PLAGE = new RegExp(`(?:depuis|since|de|from|du)?\\s*\\(?(${DATE})\\s*(?:[-–—]|à|a|to|au|>)\\s*(${FIN})\\)?`, 'i');
 const DEPUIS = new RegExp(`(?:depuis|since)\\s+(${DATE})`, 'i');
@@ -77,6 +78,10 @@ const SEULE = new RegExp(`\\(?\\b(${DATE})\\b\\)?`, 'i');
 const ANNEES = /\b((?:19|20)\d{2})\s*\/\s*((?:19|20)\d{2})\b/;
 /** « Juin - Août 2023 » : le mois de début n'a pas d'année */
 const PLAGE_MOIS = new RegExp(`\\b(${MOIS})\\s*(?:[-–—]|à|a|to|au)\\s*(${MOIS}\\s*((?:19|20)\\d{2}))`, 'i');
+
+/** Mention de handicap (RQTH…) : sensible, jamais placée d'office dans le CV */
+// (limites de mot sur toutes les lettres, accents compris : « handicapé »)
+export const INFO_SENSIBLE = /(?<!\p{L})(?:rqth|boeth|travailleu(?:r|se)s? handicap[ée]e?s?|reconnaissance (?:de (?:la )?)?qualit[ée] de travailleu(?:r|se) handicap[ée]e?)(?!\p{L})/iu;
 
 /** Extrait une période d'une ligne. Renvoie la période et le texte restant. */
 export function extraireDates(ligne: string): { periode: Periode; reste: string } | null {
@@ -174,7 +179,7 @@ export function coordonneesDepuisTexte(lignes: string[]): { coordonnees: Coordon
 // ---------------------------------------------------------------------------
 //  Expériences et formations
 // ---------------------------------------------------------------------------
-const MOTS_POSTE = /\b(stagiaire|stage|alternan|apprenti|analyste|analyst|intern|associate|associ[ée]|contr[ôo]leu|auditeu|auditri|auditor|manager|charg[ée]|assistant|consultant|junior|senior|directeu|director|responsable|trader|comptable|accountant|gestionnaire|tr[ée]sori|vendeu|employ[ée]|serveu|caissi|conseill|officer|specialist|sp[ée]cialiste|chef|head|lead|administrat|technicien|technician|ing[ée]nieu|engineer|d[ée]veloppeu|developer|architecte|architect|pentest|sysadmin|devops|rssi|ciso|product owner|scrum master|data analyst|data scientist|business developer|commercial(?:e)? (?:terrain|s[ée]dentaire|export)|attach[ée]e? commercial|acheteu|approvisionneu|logisticien|magasini|cariste|pr[ée]parat(?:eur|rice)|op[ée]rat(?:eur|rice)|infirmi|aide-soignant|auxiliaire|[ée]ducat(?:eur|rice)|animat(?:eur|rice)|juriste|avocat|paralegal|notaire|secr[ée]taire|formateu|formatrice|enseignant|professeu|r[ée]ceptionniste|cuisini|commis|barman|barmaid|h[ôo]tesse|gouvernant|community manager|conduct(?:eur|rice)|coordinat(?:eur|rice)|superviseu|agent|agente|graphiste|designer|planificat|qualiticien|m[ée]canicien|[ée]lectricien|automaticien|projeteu|dessinat(?:eur|rice))/i;
+const MOTS_POSTE = /\b(stagiaire|stage|alternan|apprenti|analyste|analyst|intern|associate|associ[ée]|contr[ôo]leu|auditeu|auditri|auditor|manager|charg[ée]|assistant|consultant|junior|senior|directeu|director|responsable|trader|comptable|accountant|gestionnaire|tr[ée]sori|vendeu|employ[ée]|serveu|caissi|conseill|officer|specialist|sp[ée]cialiste|chef|head|lead|administrat|technicien|technician|concepteu|conceptrice|ing[ée]nieu|engineer|d[ée]veloppeu|developer|architecte|architect|pentest|sysadmin|devops|rssi|ciso|product owner|scrum master|data analyst|data scientist|business developer|commercial(?:e)? (?:terrain|s[ée]dentaire|export)|attach[ée]e? commercial|acheteu|approvisionneu|logisticien|magasini|cariste|pr[ée]parat(?:eur|rice)|op[ée]rat(?:eur|rice)|infirmi|aide-soignant|auxiliaire|[ée]ducat(?:eur|rice)|animat(?:eur|rice)|juriste|avocat|paralegal|notaire|secr[ée]taire|formateu|formatrice|enseignant|professeu|r[ée]ceptionniste|cuisini|commis|barman|barmaid|h[ôo]tesse|gouvernant|community manager|conduct(?:eur|rice)|coordinat(?:eur|rice)|superviseu|agent|agente|graphiste|designer|planificat|qualiticien|m[ée]canicien|[ée]lectricien|automaticien|projeteu|dessinat(?:eur|rice))/i;
 const MOTS_DIPLOME = /\b(mast[eè]re|master|licence|bachelor|msc|mba|dipl[ôo]me|bac\b|baccalaur|dut|bts|but\b|cpge|pr[ée]pa|doctorat|phd|programme grande [ée]cole|pge|dcg|dscg|ma[iî]trise|degree|l[123]\b|m[12]\b)/i;
 // (testé sur le texte sans accents ; les débuts de mots comme « universit » n'exigent pas de fin de mot,
 //  les sigles courts oui, pour ne pas reconnaître « esc » dans « escalade »)
@@ -191,7 +196,15 @@ interface Brouillon {
 
 const nouveauBrouillon = (): Brouillon => ({ titres: [], periode: null, puces: [], posteEnPremier: false, dernierePuceVraie: false });
 
+/** Ligne qui finit par un petit mot de liaison : la suite est sur la ligne suivante */
+const FINIT_PAR_LIAISON = /\s(?:de|des|du|d['’]|en|et|à|au|aux|pour|par|sur|la|le|les|l['’]|of|and|in|for)$/i;
 function ajouterTitre(b: Brouillon, texte: string) {
+  // Intitulé coupé en deux lignes par la mise en page : « BTS Conception et Industrialisation en » / « Microtechniques »
+  const precedent = b.titres[b.titres.length - 1];
+  if (precedent && FINIT_PAR_LIAISON.test(precedent) && !/[|]/.test(texte) && nbMots(texte) <= 6) {
+    b.titres[b.titres.length - 1] = `${precedent} ${texte.trim()}`;
+    return;
+  }
   if (/\s(chez|at|@)\s/i.test(texte)) b.posteEnPremier = true;
   decouperListe(texte, /[|]/)
     // (« Groupe Industriel (ETI — 1 500 collaborateurs) — Lille » : le tiret entre parenthèses ne sépare pas)
@@ -212,7 +225,7 @@ function ajouterTitre(b: Brouillon, texte: string) {
       if (ressembleVille(ville) || villePossible(ville)) return [m[1], ville, ...suite];
       return [p];
     })
-    .map(p => equilibrer(p.replace(/^[\s,;:·•-]+|[\s,;:·•-]+$/g, '').trim()))
+    .map(p => equilibrer(p.replace(/^[\s,;:·•–—-]+|[\s,;:·•–—-]+$/g, '').trim()))
     .filter(Boolean)
     .forEach(p => b.titres.push(p));
 }
@@ -243,8 +256,12 @@ const DEBUT_DESCRIPTION = /^(gestion|suivi|suivre|analyse[rs]?|r[ée]alis|partic
 const nbMots = (t: string) => t.trim().split(/\s+/).length;
 
 /** Cette ligne courte décrit-elle une mission plutôt qu'un intitulé ? */
+/** Type de contrat entre parenthèses en fin de ligne : marque d'un intitulé de poste */
+const CONTRAT_ENTRE_PARENTHESES = /\((?:stage|stagiaire|alternance|alternant|alternante|apprentissage|cdd|cdi|int[ée]rim|freelance|b[ée]n[ée]volat|job [ée]tudiant|internship|work-study)[^)]{0,20}\)$/i;
 export function ressembleDescription(t: string): boolean {
   if (mot(MOTS_ECOLE, t) && nbMots(t) <= 6) return false; // « Établissement Saint-Marc » est une école
+  // « Concepteur 3D (stage) », « Assistante RH (alternance) » : un intitulé de poste, pas une description
+  if (CONTRAT_ENTRE_PARENTHESES.test(t.trim()) && nbMots(t) <= 8) return false;
   if (mot(DEBUT_DESCRIPTION, t.trim())) return true;
   // Phrase coupée par la mise en page (« … réduisant de ») : un intitulé ne finit pas par un mot de liaison
   if (nbMots(t) >= 4 && /\s(de|des|du|la|le|les|à|au|aux|et|en|sur|pour|par|avec|un|une|dont|sous|of|the|and|to|for|with)$/i.test(t.trim())) return true;
@@ -660,6 +677,9 @@ export function decouperCv(lignesBrutes: LigneImportee[]): ResultatImport {
       if (langues) { languesEntete.push(...versLangues([langues[1]])); return false; }
       // Disponibilité, mobilité, référence de candidature… : à classer par l'utilisatrice
       if (/^\s*(disponibilit|mobilit|permis|contact r[ée]f|r[ée]f[ée]rence|r[ée]f\.|pr[ée]avis|pr[ée]tentions|salaire|t[ée]l[ée]travail|nationalit|statut)/i.test(champ)) { infosDiverses.push(champ.trim()); return false; }
+      // RQTH / handicap : information personnelle et sensible, jamais placée d'office (titre, accroche…) :
+      // elle va dans « À classer », la personne décide si elle veut la mentionner et où
+      if (INFO_SENSIBLE.test(champ)) { infosDiverses.push(champ.trim()); return false; }
       return true;
     });
     if (!champs.length) continue;

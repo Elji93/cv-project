@@ -28,7 +28,7 @@ export function lireDate(texte: string): MoisAnnee | null {
   if (!t) return '';
   let m = t.match(/^(\d{4})-(\d{1,2})$/);
   if (m) return mois(+m[1], +m[2]);
-  m = t.match(/^(\d{1,2})[/.\-](\d{2}|\d{4})$/);
+  m = t.match(/^(\d{1,2}) ?[/.\-] ?(\d{2}|\d{4})$/); // « 05/2025 », « 05 / 2025 », « 05-2025 »
   if (m) return mois(annee(m[2]), +m[1]);
   m = t.match(/^([a-z]+)\.?\s*[-'’]?\s*(\d{2}|\d{4})$/);
   if (m) {

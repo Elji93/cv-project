@@ -71,11 +71,20 @@ export function trouverGouttiere(morceaux: Morceau[], largeurPage: number): numb
   }
   // Il faut assez de texte de chaque côté pour parler de colonnes
   if (milieu < 0 || gauche.length < 4 || droite.length < 4) return null;
+  // La séparation est placée juste avant le début de la colonne de droite (le x le plus à gauche
+  // de ses lignes, longues lignes comprises), pas au milieu de la bande vide : une longue ligne de
+  // la colonne de gauche (texte aux lettres espacées de Canva) peut s'avancer presque jusqu'à elle.
+  // (un x où commencent au moins 3 lignes ; une lettre au milieu d'un mot espacé n'est pas un début de ligne)
+  const debutDeLigne = (m: Morceau) => !morceaux.some(o => o !== m && Math.abs(o.y - m.y) < Math.max(2, m.taille * 0.45)
+    && o.x < m.x && m.x - (o.x + o.largeur) < m.taille * 1.2);
+  const departs = morceaux.filter(m => m.x >= milieu && debutDeLigne(m)).map(m => m.x);
+  const debutDroite = Math.min(...departs.filter(x => departs.filter(y => Math.abs(y - x) < 1.5).length >= 3));
+  const separation = Number.isFinite(debutDroite) ? Math.max(milieu, debutDroite - 0.5) : milieu;
   // Une vraie colonne est alignée à gauche (ses lignes commencent au même x).
   // Des dates ou des villes alignées à droite (CV à une colonne) ont au contraire le bord droit aligné.
   const alignesADroite = (cote: Morceau[]) => dispersion(cote.map(m => m.x + m.largeur)) < dispersion(cote.map(m => m.x)) * 0.6;
   if (alignesADroite(droite)) return null;
-  return milieu;
+  return separation;
 }
 
 /** Regroupe des morceaux en lignes (même hauteur), de haut en bas puis de gauche à droite */
@@ -121,7 +130,14 @@ function grouperEnLignes(morceaux: Morceau[], zone: LigneImportee['zone']): Lign
  */
 export function reconstruireLignes(morceaux: Morceau[], largeurPage: number): LigneImportee[] {
   const utiles = morceaux.filter(m => m.texte.trim());
-  const tableaux = extraireTableaux(utiles);
+  // Un « tableau » dont les cellules sont de part et d'autre de la séparation des colonnes n'en est pas un :
+  // ce sont deux colonnes dont des lignes tombent par hasard à la même hauteur (barre latérale Canva)
+  // (la séparation est cherchée sans le contenu des tableaux, dont les colonnes ressemblent à une gouttière)
+  const candidats = extraireTableaux(utiles);
+  const dansTableaux = new Set(candidats.flatMap(t => t.morceaux));
+  const gouttiere = candidats.length ? trouverGouttiere(utiles.filter(m => !dansTableaux.has(m)), largeurPage) : null;
+  const tableaux = candidats.filter(t => gouttiere === null
+    || !(t.morceaux.some(m => m.x + m.largeur <= gouttiere) && t.morceaux.some(m => m.x >= gouttiere)));
   if (!tableaux.length) return lireEnColonnes(utiles, largeurPage);
   // Chaque tableau est remplacé par un repère pleine largeur (il coupe donc les colonnes),
   // puis le repère est remplacé par les lignes du tableau
@@ -306,6 +322,28 @@ export function retirerEntetesEtPieds(pages: LigneImportee[][]): LigneImportee[]
   }));
 }
 
+/**
+ * Complète un lien LinkedIn raccourci à l'affichage (« linkedin.com/in/… », « linkedin.com/in/ »)
+ * avec l'adresse complète du lien cliquable du PDF. S'il n'y a aucun lien LinkedIn dans le texte
+ * mais un lien cliquable, on l'ajoute juste après la ligne de l'e-mail (en-tête).
+ */
+export function completerLiens(lignes: LigneImportee[], liens: string[]): LigneImportee[] {
+  const complet = liens.map(u => u.trim()).find(u => /linkedin\.com\/(in|pub)\/[^/?#\s]+/i.test(u));
+  if (!complet) return lignes;
+  const adresse = complet.replace(/^https?:\/\/(www\.)?/i, '').replace(/[/?#]+$/, '');
+  const RACCOURCI = /(?:https?:\/\/)?(?:www\.)?linkedin\.com\/(?:in|pub)\/?(?:[^\s|,;]*?)(?:\.{3,}|…)|(?:https?:\/\/)?(?:www\.)?linkedin\.com\/(?:in|pub)\/?(?=\s|$|\|)/i;
+  let trouve = false;
+  const res = lignes.map(l => {
+    if (!/linkedin\.com/i.test(l.texte)) return l;
+    trouve = true;
+    return RACCOURCI.test(l.texte) ? { ...l, texte: l.texte.replace(RACCOURCI, adresse) } : l;
+  });
+  if (trouve) return res;
+  const iEmail = res.findIndex(l => /@[\w-]+\.[a-z]{2,}/i.test(l.texte));
+  if (iEmail < 0) return res;
+  return [...res.slice(0, iEmail + 1), { ...res[iEmail], texte: adresse }, ...res.slice(iEmail + 1)];
+}
+
 export class PdfImageErreur extends Error {
   constructor() {
     super("Ce PDF ne contient pas de texte lisible : il a sans doute été exporté comme une image (« aplati »). " +
@@ -329,6 +367,7 @@ export async function lirePdf(fichier: File): Promise<ContenuImporte> {
 
   const pdf = await pdfjs.getDocument({ data: new Uint8Array(await fichier.arrayBuffer()) }).promise;
   const pages: LigneImportee[][] = [];
+  const liens: string[] = [];
   for (let n = 1; n <= pdf.numPages; n++) {
     const page = await pdf.getPage(n);
     const largeur = page.getViewport({ scale: 1 }).width;
@@ -340,10 +379,14 @@ export async function lirePdf(fichier: File): Promise<ContenuImporte> {
       morceaux.push({ texte: item.str, x, y, largeur: item.width, taille: Math.hypot(a, b) || item.height || 10 });
     }
     pages.push(reconstruireLignes(morceaux, largeur));
+    // Liens cliquables : l'adresse complète, même quand le texte affiché est raccourci
+    try {
+      for (const a of await page.getAnnotations()) if (a?.subtype === 'Link' && typeof a.url === 'string') liens.push(a.url);
+    } catch { /* PDF sans annotations lisibles */ }
   }
-  const lignes = retirerEntetesEtPieds(pages)
+  const lignes = completerLiens(retirerEntetesEtPieds(pages)
     .map(l => ({ ...l, texte: nettoyerLigne(l.texte) }))
-    .filter(l => !ligneVide(l.texte));
+    .filter(l => !ligneVide(l.texte)), liens);
   if (lignes.reduce((n, l) => n + l.texte.length, 0) < 60) throw new PdfImageErreur();
   const photo = await extrairePhotoPdf(pdf, pdfjs.OPS as unknown as Record<string, number>);
   return { lignes, photo };
