@@ -20,6 +20,7 @@ import { MesEquivalences } from './MesEquivalences';
 import { BoosterCandidature } from '../commun/BoosterCandidature';
 import { saisirTexte } from '../../store/dialogues';
 import { candidatureVide, lettreVierge } from '../../lib/lettre';
+import { MesureCachee } from '../commun/MesureCachee';
 
 const CLE_OFFRE = 'cvstudio.v3.offre';
 const CLE_INTITULE = 'cvstudio.v3.intituleOffre';
@@ -216,9 +217,9 @@ export function Analyseur() {
       )}
 
       {/* Rendu invisible du CV pour savoir s'il tient sur une page */}
-      <div aria-hidden="true" style={{ position: 'absolute', left: -10000, top: 0, visibility: 'hidden', pointerEvents: 'none' }}>
+      <MesureCachee>
         <Feuille ref={mesureRef} cv={cv} />
-      </div>
+      </MesureCachee>
     </div>
   );
 }

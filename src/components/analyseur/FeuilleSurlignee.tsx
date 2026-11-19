@@ -8,6 +8,7 @@ import type { CV } from '../../types';
 import { regexSurlignage } from '../../lib/ats/normalisation';
 import { HAUTEUR_A4_PX, LARGEUR_A4_PX } from '../../lib/mesurePage';
 import { Feuille } from '../feuille/Feuille';
+import { MesureCachee } from '../commun/MesureCachee';
 
 function surligner(racine: HTMLElement, termes: string[]) {
   const regexes = termes.map(regexSurlignage).filter((r): r is RegExp => !!r);
@@ -76,9 +77,9 @@ export function FeuilleSurlignee({ cv, termes }: { cv: CV; termes: string[] }) {
         <div ref={copie} style={{ transform: `scale(${echelle})`, transformOrigin: 'top left', width: LARGEUR_A4_PX }} />
       </div>
       {/* rendu d'origine, invisible, recopié ci-dessus */}
-      <div aria-hidden="true" style={{ position: 'absolute', left: -10000, top: 0, visibility: 'hidden', pointerEvents: 'none' }}>
+      <MesureCachee>
         <Feuille ref={source} cv={cv} />
-      </div>
+      </MesureCachee>
     </div>
   );
 }

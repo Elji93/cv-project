@@ -21,6 +21,7 @@ const PageCandidatures = lazy(() => import('./pages/PageCandidatures').then(m =>
 import { FeuilleLettre } from './components/lettre/FeuilleLettre';
 import { useImpression } from './store/impression';
 import { telechargerSauvegarde } from './lib/export/exportJson';
+import { MesureCachee } from './components/commun/MesureCachee';
 
 export function App() {
   const cv = useCvActif();
@@ -122,9 +123,9 @@ export function App() {
 
         {aidePdf && <ModaleExportPdf nom={nomFichier(cv)} tient={tient} onImprimer={() => { useImpression.setState({ lettreId: null }); exporterPdf(cv); }} onFermer={() => setAidePdf(false)} />}
         <Dialogues />
-        <div aria-hidden="true" style={{ position: 'absolute', left: -10000, top: 0, visibility: 'hidden', pointerEvents: 'none' }}>
+        <MesureCachee>
           <Feuille ref={mesureRef} cv={cv} />
-        </div>
+        </MesureCachee>
         <nav className="md:hidden fixed bottom-0 inset-x-0 z-30 flex bg-white border-t border-gray-200 pb-[env(safe-area-inset-bottom)]" aria-label="Navigation">
           {PAGES.map(p => (
             <NavLink key={p.to} to={p.to} end={p.to === '/'} className={onglet}>{p.icone}{p.court}</NavLink>
