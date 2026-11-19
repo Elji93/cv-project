@@ -32,11 +32,11 @@ jobs:
       PAT_PRESENT: ${{ secrets.AGENT_PAT != '' }}
     steps:
       # 1. Récupération du dépôt et installation
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: main
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: npm
@@ -44,7 +44,7 @@ jobs:
       - name: Installer les dépendances npm
         run: npm ci
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
 
@@ -298,7 +298,7 @@ jobs:
       - name: Créer la Pull Request
         id: pr
         if: steps.diff.outputs.changements == 'oui'
-        uses: peter-evans/create-pull-request@v7
+        uses: peter-evans/create-pull-request@v8
         with:
           # Avec AGENT_PAT, la PR déclenche la CI et peut être fusionnée automatiquement.
           # Sans, le jeton par défaut suffit pour créer la PR (fusion manuelle).
