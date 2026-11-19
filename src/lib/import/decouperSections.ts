@@ -54,7 +54,8 @@ export function detecterTitre(ligne: LigneImportee, mediane = 10): CleImport | n
   if (!brut || brut.length > 45 || /\d{3,}|@/.test(brut) || /^[(\[]/.test(brut)) return null;
   const n = normaliser(brut);
   // Mis en valeur : en MAJUSCULES ou plus gros que le texte courant
-  const enValeur = (brut === brut.toUpperCase() && /[A-Z]/.test(brut)) || ligne.taille >= mediane * 1.15;
+  // (une ligne qui commence par une minuscule est la suite d'une autre : « …dans le domaine de » / « l'informatique & réseaux »)
+  const enValeur = !/^[a-zà-ÿ]/.test(brut) && ((brut === brut.toUpperCase() && /[A-Z]/.test(brut)) || ligne.taille >= mediane * 1.15);
   const compact = n.replace(/ /g, '');
   for (const [cle, mots] of Object.entries(TITRES) as [CleImport, string[]][]) {
     if (mots.some(m => n === m || compact === m.replace(/ /g, '')
@@ -69,7 +70,7 @@ export function detecterTitre(ligne: LigneImportee, mediane = 10): CleImport | n
 const MOIS = "(?:janv(?:ier)?|f[ée]vr?(?:ier)?|mars|avr(?:il)?|mai|juin|juil(?:let)?|ao[uû]t|sept?(?:embre)?|oct(?:obre)?|nov(?:embre)?|d[ée]c(?:embre)?|jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|june?|july?|aug(?:ust)?|september|october|november|december)\\.?";
 // (une année collée à une référence, « CYBER-2026-482 », n'est pas une date)
 // « 05/2025 », « 05.2025 », « 05 / 2025 » et « 05-2025 » (mois-année : un mois de 1 à 12 seulement, pour ne pas lire « 2021-2022 » comme un mois)
-const DATE = `(?:(?:${MOIS}\\s*)?(?:\\d{1,2}\\s?[/.]\\s?|\\b(?:0?[1-9]|1[0-2])-(?=(?:19|20)\\d{2}))?(?<![A-Za-zÀ-ÿ]-)(?:19|20)\\d{2}(?!-\\d{1,3}\\b)|\\d{1,2}/\\d{2}(?![\\d/])|${MOIS}\\s*[-'’]?\\d{2}(?![\\d/]))`;
+const DATE = `(?:(?:${MOIS}\\s*)?(?:\\d{1,2}\\s?[/.]\\s?|\\b(?:0?[1-9]|1[0-2])-(?=(?:19|20)\\d{2}))?(?<![A-Za-zÀ-ÿ]-)(?:19|20)\\d{2}(?!-\\d{1,3}\\b(?![/.]))|\\d{1,2}/\\d{2}(?![\\d/])|${MOIS}\\s*[-'’]?\\d{2}(?![\\d/]))`;
 const FIN = `(?:${DATE}|aujourd['’ ]?hui|pr[ée]sent|actuel(?:lement)?|en cours|now|today|current)`;
 const PLAGE = new RegExp(`(?:depuis|since|de|from|du)?\\s*\\(?(${DATE})\\s*(?:[-–—]|à|a|to|au|>)\\s*(${FIN})\\)?`, 'i');
 const DEPUIS = new RegExp(`(?:depuis|since)\\s+(${DATE})`, 'i');
@@ -275,9 +276,19 @@ export function ressembleDescription(t: string): boolean {
     && !mot(MOTS_POSTE, premier) && !nomEnE.test(premier) && !mot(MOTS_ECOLE, t) && !mot(MOTS_ENTREPRISE, t);
 }
 
+/**
+ * Marque placée devant une ligne écrite plus gros que le reste de sa section (intitulé de poste
+ * ou de projet mis en valeur) : elle ouvre toujours une nouvelle entrée, même centrée et sans puce.
+ */
+export const INTITULE_EN_VALEUR = '\u0002';
+
 /** Découpe les lignes d'une section en blocs (expériences ou formations) */
-function decouperBlocs(lignes: string[]): Brouillon[] {
+function decouperBlocs(lignesMarquees: string[]): Brouillon[] {
+  const enValeur = new Set(lignesMarquees.flatMap((l, i) => (l.startsWith(INTITULE_EN_VALEUR) ? [i] : [])));
+  const lignes = lignesMarquees.map(l => l.replace(INTITULE_EN_VALEUR, ''));
   const blocs: Brouillon[] = [];
+  /** Entrées ouvertes par un intitulé en valeur */
+  const blocsEnValeur = new Set<Brouillon>();
   let cur: Brouillon | null = null;
   const nouveau = () => { cur = nouveauBrouillon(); blocs.push(cur); return cur; };
 
@@ -298,6 +309,15 @@ function decouperBlocs(lignes: string[]): Brouillon[] {
 
   lignes.forEach((ligne, i) => {
     const c0 = cur as Brouillon | null;
+    // Intitulé en plus gros : nouvelle entrée dès que la précédente a ses dates et son intitulé, ou des missions
+    if (enValeur.has(i) && !estPuce(ligne) && !extraireDates(ligne)) {
+      // (deux lignes en valeur qui se suivent, ex. poste puis entreprise, restent dans la même entrée)
+      const suiteDuMemeIntitule = enValeur.has(i - 1);
+      const c = c0 && !c0.puces.length && !(c0.periode && c0.titres.length) && (suiteDuMemeIntitule || !blocsEnValeur.has(c0)) ? c0 : nouveau();
+      blocsEnValeur.add(c);
+      ajouterTitre(c, ligne);
+      return;
+    }
     if (estPuce(ligne)) { const c = c0 ?? nouveau(); c.puces.push(sansPuce(ligne)); c.dernierePuceVraie = true; return; }
     // Suite d'une puce coupée en deux lignes : commence par une minuscule,
     // ou 1-2 mots seuls après une puce non terminée (« … en normes IFRS et French » / « GAAP »)
@@ -343,6 +363,9 @@ function decouperBlocs(lignes: string[]): Brouillon[] {
       if (reste) ajouterTitre(c, reste);
       return;
     }
+    // Entrée ouverte par un intitulé en valeur, qui a déjà son intitulé et sa ligne « entreprise, ville » :
+    // les lignes suivantes, même courtes, sont des missions
+    if (c0 && blocsEnValeur.has(c0) && c0.titres.length >= 2) { c0.puces.push(ligne); c0.dernierePuceVraie = false; return; }
     // Phrase longue ou terminée par un point : description
     if (ligne.length > 90 || /[.!;]$/.test(ligne)) { const c = c0 ?? nouveau(); c.puces.push(ligne); c.dernierePuceVraie = false; return; }
 
@@ -658,6 +681,14 @@ export function decouperCv(lignesBrutes: LigneImportee[]): ResultatImport {
     }
   }
   const textes = (cle: CleImport | 'entete' | 'inconnu') => blocs.filter(b => b.cle === cle).flatMap(b => b.lignes.map(l => l.texte));
+  /** Lignes d'expériences / formations, les intitulés écrits plus gros que le texte de la section étant marqués */
+  const textesMarques = (cle: CleImport) => blocs.filter(b => b.cle === cle).flatMap(b => {
+    const courante = tailleMediane(b.lignes);
+    const grands = b.lignes.filter(l => l.taille >= courante * 1.07).length;
+    // marque utile seulement si les lignes plus grosses sont l'exception (sinon la taille ne dit rien)
+    const utile = grands > 0 && grands <= b.lignes.length / 3;
+    return b.lignes.map(l => (utile && l.taille >= courante * 1.07 && l.texte.length <= 90 ? INTITULE_EN_VALEUR + l.texte : l.texte));
+  });
 
   // 2. En-tête : nom, titre, coordonnées
   const coord: Coordonnees = { email: '', telephone: '', ville: '', linkedin: '', site: '', dateNaissance: '' };
@@ -727,7 +758,7 @@ export function decouperCv(lignesBrutes: LigneImportee[]): ResultatImport {
     const suite = autres[autres.indexOf(premiereTitre) + 1];
     const memeStyle = suite && Math.abs(suite.taille - premiereTitre.taille) < 0.6 && premiereTitre.taille >= mediane * 1.05;
     const continue_ = suite && (/^[a-zà-ÿ&(–-]/.test(suite.texte) || /\b(de|du|des|en|et|&|à|au|aux|-|–|,)$/i.test(premiereTitre.texte));
-    if (suite && (memeStyle || continue_) && !estPuce(suite.texte) && !extraireDates(suite.texte) && suite.texte.length <= 60
+    if (suite && (memeStyle || continue_) && !estPuce(suite.texte) && !RESSEMBLE_LIEN.test(suite.texte) && !extraireDates(suite.texte) && suite.texte.length <= 60
       && !detecterTitre(suite, mediane) && !ressembleDescription(suite.texte) && (premiereTitre.texte + suite.texte).length <= 110) {
       lignesDuTitre.push(suite);
     }
@@ -810,7 +841,7 @@ export function decouperCv(lignesBrutes: LigneImportee[]): ResultatImport {
       .map(sansPuce).join(' ').replace(/\s+/g, ' ').trim(),
     rythmeAlternance,
     qualites: [...new Set(qualites)],
-    experiences: [...versExperiences(textes('experiences')), ...devineesExp],
+    experiences: [...versExperiences(textesMarques('experiences')), ...devineesExp],
     formations: [...versFormations(formationsSansCertifs), ...devineesForm],
     competences: competencesFusionnees,
     langues: [...versLangues(textes('langues')), ...languesDesCompetences, ...languesEntete],
@@ -872,11 +903,24 @@ export function recollerParagraphes(lignes: LigneImportee[]): LigneImportee[] {
     // Parenthèse ouverte non refermée : la ligne suivante en fait partie
     const parentheseOuverte = prec && prec.zone === l.zone && (prec.texte.match(/\(/g) ?? []).length > (prec.texte.match(/\)/g) ?? []).length
       && !estPuce(l.texte) && Math.abs(prec.taille - l.taille) < 1.5 && prec.texte.length + l.texte.length < 300;
-    if (suite || parentheseOuverte) out[out.length - 1] = { ...prec, texte: `${prec.texte} ${l.texte}` };
+    // Intitulé coupé après une virgule : « BTS Cybersécurité Informatique et Réseau, » puis « Electronique »
+    const motApresVirgule = prec && prec.zone === l.zone && prec.texte.length >= 30 && /,$/.test(prec.texte) && /^[A-ZÀ-Ýa-zà-ÿ][\p{L}-]+$/u.test(l.texte.trim())
+      && !estPuce(l.texte) && Math.abs(prec.taille - l.taille) < 0.6;
+    // Puce coupée par la mise en page : « • Régler les paramètres des » puis « machines »
+    const suitePuce = prec && prec.zone === l.zone && estPuce(prec.texte) && !estPuce(l.texte) && /^[a-zà-ÿ’']/.test(l.texte)
+      && !/[.!?:;]$/.test(prec.texte) && Math.abs(prec.taille - l.taille) < 0.6 && l.texte.length <= 60 && !/@|https?:|www\./.test(l.texte);
+    // Ligne coupée après un mot de liaison, même sans puce dessinée en texte : « Régler les paramètres des » / « machines »
+    const apresLiaison = prec && prec.zone === l.zone && !estPuce(l.texte) && /^[a-zà-ÿ]/.test(l.texte) && l.texte.length <= 60
+      && /\s(de|des|du|la|le|les|sur|en|et|à|au|aux|pour|avec|par|dans|un|une|d['’]|l['’])$/i.test(prec.texte)
+      && Math.abs(prec.taille - l.taille) < 0.6 && !/@|https?:|www\./.test(l.texte);
+    if (suite || parentheseOuverte || suitePuce || motApresVirgule || apresLiaison) out[out.length - 1] = { ...prec, texte: `${prec.texte} ${l.texte}` };
     else out.push(l);
   }
   return out;
 }
+
+/** Morceau d'adresse web : sans espace, avec « / », « % » ou une longue suite de caractères */
+const RESSEMBLE_LIEN = /^\S*(?:[/%]|\.(?:com|fr|io|net|org)\b)\S*$|^\S{25,}$/;
 
 /** « CANDIDATURE ANONYMISÉE », « CV anonyme », « Anonymous résumé » */
 const ANONYME = /\b(anonymi[sz][ée]e?s?|cv anonyme|candidature anonyme|anonymous)\b/i;
@@ -891,6 +935,12 @@ function joindreChampsEntete(lignes: LigneImportee[]): LigneImportee[] {
   const out: LigneImportee[] = [];
   for (const l of lignes) {
     const prec = out[out.length - 1];
+    // Adresse (LinkedIn…) coupée en fin de ligne : « https://www.linkedin.com/in/h » puis « ugo-dumont-0a1b2c/ »
+    if (prec && /(?:https?:\/\/|www\.|linkedin\.com\/)\S*$/i.test(prec.texte) && !/\/\s*$|\.{2,}\s*$|…\s*$/.test(prec.texte)
+      && /^[\w%.~-]+\/?$/.test(l.texte.trim()) && /[a-z0-9%-]/.test(l.texte) && !INFO_SENSIBLE.test(l.texte)) {
+      out[out.length - 1] = { ...prec, texte: prec.texte + l.texte.trim() };
+      continue;
+    }
     if (prec && /\s\|\s|^[^:]{3,30}\s:\s/.test(prec.texte) && /^[(a-zà-ÿ,]/.test(l.texte.trim()) && !estPuce(l.texte)) {
       out[out.length - 1] = { ...prec, texte: `${prec.texte} ${l.texte.trim()}` };
     } else out.push(l);

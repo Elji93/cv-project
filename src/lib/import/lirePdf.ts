@@ -88,6 +88,9 @@ export function trouverGouttiere(morceaux: Morceau[], largeurPage: number): numb
 }
 
 /** Regroupe des morceaux en lignes (même hauteur), de haut en bas puis de gauche à droite */
+/** « R é g l e r », « ( d é b u t a n t ) », « 2 0 2 3 » : caractères isolés séparés par une seule espace */
+const LETTRES_ESPACEES = /^\S(?: \S)+$/;
+
 function grouperEnLignes(morceaux: Morceau[], zone: LigneImportee['zone']): LigneImportee[] {
   const tries = [...morceaux].sort((a, b) => b.y - a.y || a.x - b.x);
   const lignes: Morceau[][] = [];
@@ -96,7 +99,12 @@ function grouperEnLignes(morceaux: Morceau[], zone: LigneImportee['zone']): Lign
     if (derniere && Math.abs(derniere[0].y - m.y) < Math.max(2, m.taille * 0.45)) derniere.push(m);
     else lignes.push([m]);
   }
-  return lignes.map(l => {
+  return lignes.map(brutes => {
+    // Lettres très espacées (Canva) : pdf.js renvoie un morceau par mot, « R é g l e r », séparé du mot
+    // suivant par un morceau « » : on recolle les lettres de chaque mot, la séparation entre morceaux
+    // donnera l'espace entre les mots (sinon « Réglerlesparamètres » une fois tout recollé)
+    const espacees = brutes.some(m => LETTRES_ESPACEES.test(m.texte.trim()) && m.texte.trim().length >= 5);
+    const l = espacees ? brutes.map(m => (LETTRES_ESPACEES.test(m.texte.trim()) ? { ...m, texte: m.texte.trim().replace(/ /g, '') } : m)) : brutes;
     l.sort((a, b) => a.x - b.x);
     // Titres Canva aux lettres espacées : chaque lettre est un morceau séparé.
     // On ne met alors une espace que pour les écarts nettement plus grands que l'écart habituel entre lettres.
@@ -353,6 +361,73 @@ export class PdfImageErreur extends Error {
 }
 
 /** Ce que l'on tire d'un fichier : le texte (en lignes) et la photo éventuelle */
+// ---------------------------------------------------------------------------
+//  Lettres espacées sur toute une ligne (Canva) : pdf.js rend « C o n t r ô l e r u n p r o d u i t »,
+//  avec la même espace entre les lettres et entre les mots. Les vrais caractères « espace » existent
+//  pourtant dans le PDF : on les retrouve dans la suite des caractères dessinés (liste des opérations).
+// ---------------------------------------------------------------------------
+/** Suite des caractères dessinés : chaque caractère visible, et s'il est précédé d'une vraie espace */
+export interface FluxCaracteres { lettres: string; espaceAvant: boolean[] }
+
+/** Construit le flux à partir des groupes de caractères dessinés (un groupe = une opération d'écriture) */
+export function fluxDepuisGlyphes(groupes: (string | null)[][]): FluxCaracteres {
+  let lettres = '';
+  const espaceAvant: boolean[] = [];
+  for (const groupe of groupes) {
+    // (début d'opération : pas d'espace supposée, car certains PDF écrivent chaque lettre à part)
+    let espace = false;
+    for (const u of groupe) {
+      if (u === null) continue; // simple décalage (espacement des lettres)
+      if (!u.trim()) { espace = true; continue; }
+      for (const [k, c] of [...u.normalize('NFKC')].entries()) {
+        lettres += c;
+        espaceAvant.push(k === 0 && espace);
+      }
+      espace = false;
+    }
+  }
+  return { lettres, espaceAvant };
+}
+
+/**
+ * Remet les espaces entre les mots d'un texte aux lettres espacées, grâce au flux de caractères.
+ * Renvoie null si le texte n'est pas aux lettres espacées ou n'est pas retrouvé.
+ */
+export function respacer(texte: string, flux: FluxCaracteres, depuis = 0): { texte: string; fin: number } | null {
+  const t = texte.trim();
+  if (!LETTRES_ESPACEES.test(t) || t.length < 7) return null;
+  const compact = t.replace(/ /g, '').normalize('NFKC');
+  let pos = flux.lettres.indexOf(compact, depuis);
+  if (pos < 0) pos = flux.lettres.indexOf(compact);
+  if (pos < 0) return null;
+  let out = '';
+  [...compact].forEach((c, j) => { out += (j > 0 && flux.espaceAvant[pos + j] ? ' ' : '') + c; });
+  return { texte: out, fin: pos + compact.length };
+}
+
+/** Page pdf.js, réduite à ce qui sert ici */
+interface PageAvecOperations { getOperatorList(): Promise<{ fnArray: number[]; argsArray: unknown[][] }> }
+
+/** Corrige les morceaux aux lettres espacées d'une page (« C o n t r ô l e r u n » -> « Contrôler un ») */
+export async function respacerMorceaux(page: PageAvecOperations, morceaux: Morceau[], opEcriture: number): Promise<void> {
+  if (!morceaux.some(m => LETTRES_ESPACEES.test(m.texte.trim()) && m.texte.trim().length >= 7)) return;
+  try {
+    const ops = await page.getOperatorList();
+    const groupes: (string | null)[][] = [];
+    ops.fnArray.forEach((f, k) => {
+      if (f !== opEcriture) return;
+      const glyphes = ops.argsArray[k]?.[0];
+      if (Array.isArray(glyphes)) groupes.push(glyphes.map(g => (g && typeof g === 'object' && typeof (g as { unicode?: unknown }).unicode === 'string' ? (g as { unicode: string }).unicode : null)));
+    });
+    const flux = fluxDepuisGlyphes(groupes);
+    let curseur = 0;
+    for (const m of morceaux) {
+      const r = respacer(m.texte, flux, curseur);
+      if (r) { m.texte = r.texte; curseur = r.fin; }
+    }
+  } catch { /* liste des opérations illisible : on garde le texte tel quel */ }
+}
+
 export interface ContenuImporte {
   lignes: LigneImportee[];
   photo: Photo | null;
@@ -378,6 +453,8 @@ export async function lirePdf(fichier: File): Promise<ContenuImporte> {
       const [a, b, , , x, y] = item.transform as number[];
       morceaux.push({ texte: item.str, x, y, largeur: item.width, taille: Math.hypot(a, b) || item.height || 10 });
     }
+    // Lettres espacées sur toute une ligne : on retrouve les vrais espaces dans les caractères dessinés
+    await respacerMorceaux(page, morceaux, pdfjs.OPS.showText);
     pages.push(reconstruireLignes(morceaux, largeur));
     // Liens cliquables : l'adresse complète, même quand le texte affiché est raccourci
     try {
