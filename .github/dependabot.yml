@@ -2,6 +2,8 @@ version: 2
 updates:
   # Paquets npm : une PR groupée par semaine pour les mises à jour mineures et correctives,
   # une PR séparée par paquet pour les mises à jour majeures (plus risquées).
+  # Exception : React et ses types vont toujours ensemble (react et react-dom doivent avoir
+  # la même version, sinon l'installation échoue).
   - package-ecosystem: npm
     directory: /
     schedule:
@@ -13,6 +15,9 @@ updates:
     commit-message:
       prefix: 'deps'
     groups:
+      # Placé en premier : un paquet va dans le premier groupe qui lui correspond
+      react:
+        patterns: ['react', 'react-dom', '@types/react', '@types/react-dom']
       mineures-et-correctifs:
         update-types: [minor, patch]
 
