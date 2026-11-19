@@ -84,7 +84,10 @@ jobs:
           - N'ajoute aucune dépendance, aucun back-end, aucun appel réseau, aucune clé API.
           - Code et commentaires en français, comme le reste du projet.
           - npm run build et npm test doivent passer.
-          - Termine par un résumé de 3 à 5 phrases en français : ce qui a changé, pourquoi, comment le vérifier.
+          - Termine en créant, à la racine du dépôt, le fichier RESUME-AGENT.md : 3 à 5 phrases en français simple,
+            sans jargon technique, pour une personne qui n'est pas informaticienne. Dis ce qui a changé pour
+            l'utilisatrice du site, pourquoi c'est utile, et où le voir sur le site (quelle page, quel bouton).
+            Ce fichier sert uniquement à rédiger la Pull Request : il ne sera pas ajouté au site.
           EOF
 
       # 3. L'agent travaille (sans commit : les changements restent dans l'arbre de travail).
@@ -219,6 +222,8 @@ jobs:
       - name: Annuler les modifications de fichiers protégés
         run: |
           rm -rf .aider*
+          # Le résumé de l'agent est mis de côté pour la description de la Pull Request (jamais dans le site)
+          if [ -f RESUME-AGENT.md ]; then mv RESUME-AGENT.md /tmp/resume-agent.md; fi
           git checkout HEAD -- .github AGENTS.md package.json package-lock.json vite.config.ts
           git clean -fdq -- .github
           git status --short
@@ -250,6 +255,19 @@ jobs:
           git add -A
           {
             echo "## 🤖 Amélioration automatique du ${{ steps.prep.outputs.date }}"
+            echo
+            echo "### En bref (expliqué par l'agent)"
+            echo
+            if [ -s /tmp/resume-agent.md ]; then
+              sed 's/```/ʼʼʼ/g' /tmp/resume-agent.md
+            else
+              echo "_L'agent n'a pas laissé de résumé cette fois-ci : regarde la liste des fichiers modifiés et son journal plus bas._"
+            fi
+            echo
+            echo "**Accepter :** bouton vert **Merge pull request** (le site se met à jour en 1 à 2 minutes)."
+            echo "**Refuser :** bouton **Close pull request** (rien ne change, rien n'est perdu)."
+            echo
+            echo "---"
             echo
             echo "**Tâche confiée à l'agent :** $THEME"
             echo

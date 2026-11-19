@@ -54,4 +54,4 @@ Lis-le en entier avant d'éditer le moindre fichier. En cas de doute, **ne modif
 
 1. Relis ton diff : il ne doit concerner que ta tâche.
 2. Vérifie que `npm run build` et `npm test` passent.
-3. Résume en 3 à 5 phrases, en français : ce que tu as changé, pourquoi, et comment le vérifier dans l'interface.
+3. Écris ton résumé dans le fichier `RESUME-AGENT.md`, à la racine du dépôt : 3 à 5 phrases en français simple, **sans jargon technique**, pour une personne qui n'est pas informaticienne (ce qui change pour l'utilisatrice du site, pourquoi c'est utile, sur quelle page le voir). Il est affiché en tête de la Pull Request et n'est jamais ajouté au site.
