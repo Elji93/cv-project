@@ -18,9 +18,10 @@ import { EVENEMENT_PDF } from '../components/commun/useRaccourcis';
 import { LARGEUR_A4_PX, useMesurePage } from '../lib/mesurePage';
 import { imprimer } from '../lib/export/exportPdf';
 import {
-  brouillonLettre, candidatureVide, lettreVierge, lieuDateAuto, nomFichierLettre, objetAuto, verifierLettre,
+  ajouterPhraseRqth, brouillonLettre, candidatureVide, lettreVierge, lieuDateAuto, nomFichierLettre, objetAuto, verifierLettre,
 } from '../lib/lettre';
 import type { LettreMotivation } from '../types';
+import { phraseRqthLettre, rqthDansLettre } from '../lib/rqth';
 
 const CLE_LETTRE_ACTIVE = 'cvstudio.v3.lettreActive';
 const lire = () => { try { return localStorage.getItem(CLE_LETTRE_ACTIVE) ?? ''; } catch { return ''; } };
@@ -189,6 +190,12 @@ function EditeurLettre({ lettre: l, lettres, cvs, onChoisir, onNouvelle, onModif
           <ZoneTexte libelle="" rows={14} valeur={l.corps} onValeur={champ('corps')}
             placeholder="Séparez les paragraphes par une ligne vide."
             aide={<>Plan conseillé en 3 paragraphes : <b>vous</b> (pourquoi cette entreprise), <b>moi</b> (2 réalisations chiffrées liées à l'offre), <b>nous</b> (ce que vous apporterez, demande d'entretien). Les passages entre [crochets] sont à remplacer.</>} />
+          {rqthDansLettre(cv) && !/RQTH/i.test(l.corps) && (
+            <Astuce>
+              Vous avez choisi d’indiquer la RQTH dans la lettre (Infos & photo). Phrase proposée : « {phraseRqthLettre(cv)} »
+              <button className="btn-sm mt-1.5" onClick={() => onModifier(x => { x.corps = ajouterPhraseRqth(x.corps, phraseRqthLettre(cv)); })}>Ajouter la phrase RQTH</button>
+            </Astuce>
+          )}
           <ZoneTexte libelle="Formule de politesse" rows={2} valeur={l.politesse} onValeur={champ('politesse')} />
 
           {alertes.length > 0 ? (

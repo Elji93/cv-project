@@ -4,6 +4,7 @@
 // ============================================================================
 import type { Candidature, CV, LettreMotivation, StatutCandidature } from '../types';
 import { affichees, maintenant, nomComplet, uid } from './cv';
+import { phraseRqthLettre, rqthDansLettre } from './rqth';
 
 const MOIS_FR = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
 const MOIS_EN = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
@@ -78,12 +79,14 @@ export function brouillonLettre(cv: CV, l: Pick<LettreMotivation, 'entreprise' |
     return [
       `I am writing to apply for the ${poste} position at ${ent}. [What attracts you to ${ent}: a recent deal, its sector, its values, its growth.]`,
       `${form ? `Currently ${form.diplome}${form.etablissement ? ` student at ${form.etablissement}` : ''}, ` : ''}${exp ? `I gained hands-on experience as ${exp.poste}${exp.entreprise ? ` at ${exp.entreprise}` : ''}, where I [main achievement with a figure].` : '[Your most relevant experience, with a figure.]'}${outils ? ` I am proficient in ${outils}.` : ''} [Link this to one or two requirements of the job offer.]`,
+      ...(rqthDansLettre(cv) ? [phraseRqthLettre(cv)] : []),
       `Joining ${ent} would allow me to [what you will bring to the team]. ${d.rythmeAlternance ? `My work-study schedule: ${d.rythmeAlternance}. ` : ''}I would welcome the opportunity to discuss my application in an interview.`,
     ].join('\n\n');
   }
   return [
     `Votre annonce pour le poste de ${poste} a retenu toute mon attention. [Ce qui vous attire chez ${ent} : une opération récente, son secteur, ses valeurs, sa croissance.]`,
     `${form ? `Actuellement en ${form.diplome}${form.etablissement ? ` à ${form.etablissement}` : ''}, ` : ''}${exp ? `j’ai acquis une première expérience ${elision('en tant que', exp.poste)}${exp.entreprise ? ` chez ${exp.entreprise}` : ''}, où j’ai [réalisation principale, avec un chiffre].` : '[Votre expérience la plus proche du poste, avec un chiffre.]'}${outils ? ` Je maîtrise notamment ${outils}.` : ''} [Reliez ces compétences à une ou deux exigences de l’offre.]`,
+    ...(rqthDansLettre(cv) ? [phraseRqthLettre(cv)] : []),
     `Rejoindre ${ent} me permettrait de [ce que vous apporterez à l’équipe]. ${d.rythmeAlternance ? `Mon rythme d’alternance : ${d.rythmeAlternance}. ` : ''}Je me tiens à votre disposition pour vous exposer plus en détail ma motivation lors d’un entretien.`,
   ].join('\n\n');
 }
@@ -179,4 +182,12 @@ export function filtrerCandidatures(liste: Candidature[], statuts: StatutCandida
   const q = normal(recherche);
   return liste.filter(c => (!statuts.length || statuts.includes(c.statut))
     && (!q || normal(`${c.entreprise} ${c.poste} ${c.notes}`).includes(q)));
+}
+
+/** Insère la phrase RQTH avant le dernier paragraphe (demande d'entretien), ou à la fin */
+export function ajouterPhraseRqth(corps: string, phrase: string): string {
+  const p = paragraphes(corps);
+  if (p.some(x => /RQTH/i.test(x))) return corps;
+  if (p.length < 2) return [...p, phrase].join('\n\n');
+  return [...p.slice(0, -1), phrase, p[p.length - 1]].join('\n\n');
 }

@@ -65,7 +65,12 @@ export interface InfosPerso {
   photo: Photo | null;
   /** Coordonnées gardées en mémoire mais masquées sur le CV (téléphone, LinkedIn…) */
   masques?: ChampContact[];
+  /** Mention RQTH, facultative : où l'afficher (absente = nulle part, choix par défaut) */
+  mentionRqth?: EmplacementRqth;
 }
+
+/** Emplacement de la mention RQTH : en-tête, bas du CV, ou seulement dans la lettre de motivation */
+export type EmplacementRqth = 'entete' | 'bas' | 'lettre';
 
 /** Coordonnées que l'on peut masquer sur le CV */
 export type ChampContact = 'email' | 'telephone' | 'ville' | 'linkedin' | 'site' | 'dateNaissance';

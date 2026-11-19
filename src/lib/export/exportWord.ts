@@ -18,6 +18,7 @@ import { formaterPeriode } from '../dates';
 import { NIVEAUX_CECRL } from '../../data/constantes';
 import { photoRecadreePng } from '../photo';
 import { nomFichier } from './nomFichier';
+import { rqthEnBas, rqthEnTete, texteRqthBas, texteRqthEntete } from '../rqth';
 import { definitionTemplate, estGroupeOutils, groupesAffiches } from '../../components/feuille/templates';
 
 const rempli = (s?: string) => !!s && s.trim().length > 0;
@@ -155,6 +156,8 @@ export async function construireDocumentWord(cv: CV, avecPhoto = true): Promise<
     if (cle === 'centresInteret' && d.centresInteret.length) contenu.push(paragraphe([T(d.centresInteret.join(', '))]));
     if (contenu.length) paragraphes.push(titre(titreSection(cv, cle)), ...contenu);
   });
+  // Mention RQTH choisie « en bas du CV »
+  if (rqthEnBas(cv)) paragraphes.push(paragraphe([T(texteRqthBas(cv))]));
 
   // Styles Word natifs : « Title », « heading 1 », « heading 2 » (affichés « Titre », « Titre 1 », « Titre 2 »
   // dans un Word en français). Leur apparence est fixée paragraphe par paragraphe ci-dessus.
@@ -239,7 +242,7 @@ export async function enteteWord(cv: CV, o: { avecPhoto?: boolean; sansNaissance
       children: [T(p.titre, { pt: t, bold: true, color: moderne ? NOIR : couleur })],
     }));
   }
-  const coordonnees = [p.email, p.telephone, p.ville, p.linkedin, p.site, o.sansNaissance ? '' : p.dateNaissance].filter(rempli).join('  |  ');
+  const coordonnees = [p.email, p.telephone, p.ville, p.linkedin, p.site, o.sansNaissance ? '' : p.dateNaissance, rqthEnTete(cv) ? texteRqthEntete(cv) : ''].filter(rempli).join('  |  ');
   const tContact = S * 0.94;
   paragraphes.push(new Paragraph({
     alignment: alignementEntete,

@@ -6,6 +6,7 @@ import { Fragment, type CSSProperties, type ReactNode } from 'react';
 import type { ChampContact, CV, InfosPerso } from '../../types';
 import { styleRecadrage } from '../../lib/photo';
 import { estMasque, policeCss } from '../../lib/cv';
+import { rqthEnTete, texteRqthEntete } from '../../lib/rqth';
 import { ChampEditable } from './ChampEditable';
 import { definitionTemplate } from './templates';
 
@@ -64,6 +65,8 @@ export function EnteteCv({ cv, modifier, sansPhoto, sansNaissance }: Props) {
               {champ(p[k] as string, (c, v) => { (c.donnees.infosPerso[k] as string) = v; }, indication)}
             </Fragment>
           ))}
+          {/* Mention RQTH choisie dans « Infos & photo » (texte fixe, non modifiable ici) */}
+          {rqthEnTete(cv) && <>{visibles.length > 0 && <span className="sep">|</span>}<span>{texteRqthEntete(cv)}</span></>}
         </div>
       </div>
     </header>

@@ -127,6 +127,9 @@
   #print-root .cv-page { height: 297mm; min-height: 0; overflow: hidden; }
 }
 
+/* Mention facultative en bas du CV (RQTH) */
+.cv-page .cv-mention { margin-top: .9em; font-size: .92em; }
+
 /* Surlignage des mots-clés trouvés (analyseur) */
 mark.cv-surligne { background: #bbf7d0; color: inherit; border-radius: 2px; padding: 0 1px; }
 @media print { mark.cv-surligne { background: none; } }

@@ -32,7 +32,7 @@ export function remplacerContenu(cv: CV, r: ResultatImport) {
 //  ou un champ précis des informations personnelles
 // ---------------------------------------------------------------------------
 export type ChampInfo = 'nomComplet' | 'prenom' | 'nom' | 'titre' | 'email' | 'telephone' | 'ville' | 'linkedin' | 'site'
-  | 'dateNaissance' | 'rythmeAlternance' | 'auto';
+  | 'dateNaissance' | 'rythmeAlternance' | 'rqth' | 'auto';
 /** Champ d'une expérience ou d'une formation existante */
 export type ChampExperience = 'puces' | 'poste' | 'entreprise' | 'ville' | 'dates';
 export type ChampFormation = 'puces' | 'diplome' | 'etablissement' | 'ville' | 'dates';
@@ -67,6 +67,7 @@ export const CHAMPS_INFOS: [ChampInfo, string][] = [
   ['site', 'Site / GitHub / portfolio'],
   ['dateNaissance', 'Date de naissance'],
   ['rythmeAlternance', 'Rythme d’alternance'],
+  ['rqth', 'Mention RQTH (en-tête, modifiable dans Infos & photo)'],
 ];
 
 export const estInfo = (d: Destination): d is `infos.${ChampInfo}` => d.startsWith('infos.');
@@ -151,12 +152,16 @@ function versInfos(d: DonneesCV, lignes: string[], champ: ChampInfo): string[] {
     case 'rythmeAlternance':
       d.rythmeAlternance = valeur;
       break;
+    // Mention RQTH : on active l'option (texte standard) plutôt que de recopier la ligne
+    case 'rqth':
+      p.mentionRqth = 'entete';
+      break;
     // Pour l'email, le téléphone, LinkedIn et le site : la valeur reconnue si possible, sinon le texte tel quel
     case 'email': case 'telephone': case 'linkedin': case 'site':
       p[champ] = c[champ] || valeur;
       break;
     default:
-      (p as Record<Exclude<keyof InfosPerso, 'photo' | 'masques'>, string>)[champ] = valeur;
+      (p as Record<Exclude<keyof InfosPerso, 'photo' | 'masques' | 'mentionRqth'>, string>)[champ as Exclude<ChampInfo, 'rqth' | 'nomComplet' | 'rythmeAlternance' | 'auto'>] = valeur;
   }
   return [];
 }

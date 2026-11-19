@@ -11,6 +11,7 @@ import { ChampEditable, libererFocus, placerCurseur } from './ChampEditable';
 import { EnteteCv, variablesFeuille } from './EnteteCv';
 import { definitionTemplate, estGroupeOutils, groupesAffiches } from './templates';
 import './feuille.css';
+import { rqthEnBas, texteRqthBas } from '../../lib/rqth';
 
 interface Props {
   cv: CV;
@@ -242,6 +243,7 @@ export const Feuille = forwardRef<HTMLDivElement, Props>(function Feuille({ cv, 
           </section>
         );
       })}
+      {rqthEnBas(cv) && <p className="cv-mention">{texteRqthBas(cv)}</p>}
     </div>
   );
 });

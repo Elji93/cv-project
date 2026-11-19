@@ -1,13 +1,14 @@
 // Onglet « Infos personnelles & photo »
 // Chaque coordonnée peut être masquée sur le CV (elle reste en mémoire) : bouton œil à côté du libellé.
 import { Eye, EyeOff } from 'lucide-react';
-import type { ChampContact, InfosPerso } from '../../types';
+import type { ChampContact, EmplacementRqth, InfosPerso } from '../../types';
+import { EMPLACEMENTS_RQTH } from '../../lib/rqth';
 import { useCvActif, useModifierCv } from '../../store/useAppStore';
 import { estMasque } from '../../lib/cv';
 import { Astuce, ChampTexte } from '../commun/Champs';
 import { EditeurPhoto } from './EditeurPhoto';
 
-type CleTexte = Exclude<keyof InfosPerso, 'photo' | 'masques'>;
+type CleTexte = Exclude<keyof InfosPerso, 'photo' | 'masques' | 'mentionRqth'>;
 const MASQUABLES: CleTexte[] = ['email', 'telephone', 'ville', 'linkedin', 'site', 'dateNaissance'];
 
 export function OngletInfosPerso() {
@@ -55,6 +56,17 @@ export function OngletInfosPerso() {
         elle reste enregistrée mais n’apparaît plus sur le CV, le PDF, le Word ni la lettre.
         {nbMasques > 0 && <> <b>{nbMasques} masquée{nbMasques > 1 ? 's' : ''}.</b></>}
       </Astuce>
+      <div className="mb-3 rounded-lg border border-gray-200 p-3">
+        <label htmlFor="mention-rqth" className="text-xs font-semibold text-gray-500">Mention RQTH (facultative)</label>
+        <select id="mention-rqth" className="input mt-1" value={p.mentionRqth ?? ''}
+          onChange={e => { const v = e.target.value as EmplacementRqth | ''; modifier(c => { if (v) c.donnees.infosPerso.mentionRqth = v; else delete c.donnees.infosPerso.mentionRqth; }); }}>
+          {EMPLACEMENTS_RQTH.map(o => <option key={o.valeur} value={o.valeur}>{o.libelle}</option>)}
+        </select>
+        <p className="text-[11.5px] text-gray-500 leading-snug mt-1.5">
+          {EMPLACEMENTS_RQTH.find(o => o.valeur === (p.mentionRqth ?? ''))?.aide}
+          {' '}Ne précisez jamais la nature du handicap : un employeur n’a pas à la connaître.
+        </p>
+      </div>
       <Astuce ton="alerte">La date de naissance est facultative en France et déconseillée pour les candidatures UK / US (risque de discrimination par l'âge). Les ATS ne s'en servent pas.</Astuce>
       <Astuce>Email, téléphone, ville et LinkedIn complets font partie des contrôles ATS.</Astuce>
     </>

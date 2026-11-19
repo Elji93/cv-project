@@ -13,6 +13,7 @@ import { formaterPeriode } from '../dates';
 import { contient, detecterLangue, mots, normaliser, sansAccents } from './normalisation';
 import { dictionnaire, extraireMotsCles, type Priorite } from './extraction';
 import { genererConseils } from './conseils';
+import { rqthEnBas, rqthEnTete, texteRqthBas, texteRqthEntete } from '../rqth';
 
 const rempli = (s?: string) => !!s && s.trim().length > 0;
 
@@ -96,7 +97,7 @@ function noterTitre(titreCv: string, intitule: string, perso: EquivalencePerso[]
 export function texteBrutCv(cv: CV) {
   // (coordonnées masquées : absentes du CV, donc absentes pour les ATS)
   const d = cv.donnees, p = infosVisibles(cv);
-  const out: string[] = [nomComplet(cv), p.titre, [p.email, p.telephone, p.ville, p.linkedin, p.site, p.dateNaissance].filter(rempli).join(' | ')];
+  const out: string[] = [nomComplet(cv), p.titre, [p.email, p.telephone, p.ville, p.linkedin, p.site, p.dateNaissance, rqthEnTete(cv) ? texteRqthEntete(cv) : ''].filter(rempli).join(' | ')];
   cv.ordreSections.filter(k => !cv.sectionsMasquees.includes(k)).forEach(cle => {
     const sec: string[] = [];
     if (cle === 'accroche' && rempli(d.accroche)) sec.push(d.accroche);
@@ -116,6 +117,7 @@ export function texteBrutCv(cv: CV) {
     if (cle === 'centresInteret' && d.centresInteret.length) sec.push(d.centresInteret.join(', '));
     if (sec.length) out.push('', titreSection(cv, cle).toUpperCase(), ...sec);
   });
+  if (rqthEnBas(cv)) out.push('', texteRqthBas(cv));
   return out.join('\n');
 }
 
