@@ -8,7 +8,7 @@ import { INTITULES_POSTES, type CategorieMotCle } from '../../data/synonymes';
 import { MOTS_VIDES } from '../../data/motsVides';
 import { VERBES_ACTION_EN, VERBES_ACTION_FR } from '../../data/verbesAction';
 import { NIVEAUX_CECRL } from '../../data/constantes';
-import { affichees, nomComplet, titreSection } from '../cv';
+import { affichees, nomComplet, titreSection, infosVisibles } from '../cv';
 import { formaterPeriode } from '../dates';
 import { contient, detecterLangue, mots, normaliser, sansAccents } from './normalisation';
 import { dictionnaire, extraireMotsCles, type Priorite } from './extraction';
@@ -94,7 +94,8 @@ function noterTitre(titreCv: string, intitule: string, perso: EquivalencePerso[]
 //  Texte brut du CV (prompt IA, conformité)
 // ---------------------------------------------------------------------------
 export function texteBrutCv(cv: CV) {
-  const d = cv.donnees, p = d.infosPerso;
+  // (coordonnées masquées : absentes du CV, donc absentes pour les ATS)
+  const d = cv.donnees, p = infosVisibles(cv);
   const out: string[] = [nomComplet(cv), p.titre, [p.email, p.telephone, p.ville, p.linkedin, p.site, p.dateNaissance].filter(rempli).join(' | ')];
   cv.ordreSections.filter(k => !cv.sectionsMasquees.includes(k)).forEach(cle => {
     const sec: string[] = [];
@@ -148,7 +149,8 @@ const POIDS_PRIORITE: Record<Priorite, number> = { obligatoire: 2, normal: 1, so
 //  Analyse
 // ---------------------------------------------------------------------------
 export function analyserCv(cv: CV, offre: string, intituleSaisi: string, tientSurUnePage: boolean, perso: EquivalencePerso[] = []): ResultatAts {
-  const d = cv.donnees, p = d.infosPerso;
+  // (coordonnées masquées : absentes du CV, donc absentes pour les ATS)
+  const d = cv.donnees, p = infosVisibles(cv);
   const visible = (k: Parameters<typeof titreSection>[1]) => !cv.sectionsMasquees.includes(k);
   const langueOffre = detecterLangue(offre);
 

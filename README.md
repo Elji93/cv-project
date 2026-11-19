@@ -30,7 +30,8 @@ Elle comprend aussi un **analyseur de score ATS** (critères de l'APEC), un édi
   - sections masquables et renommables.
 - **Version anglaise (ou française) du CV** : Mise en forme › « Créer une version anglaise ». Le site prépare un prompt (contenu du CV en JSON) à coller dans ChatGPT ou Claude ; la réponse recollée devient un nouveau CV traduit (titres de sections et dates compris), le CV d'origine restant intact. Sans IA, une copie avec titres, dates et noms de langues traduits.
 - **Photo** facultative : recadrage par glisser, zoom, forme carrée ou ronde.
-- **Réserve** (expériences, formations, groupes de compétences, langues, certifications) : tout reste en mémoire, une case « Sur le CV » choisit ce qui apparaît (feuille, PDF, Word, score ATS). L'analyseur signale les éléments en réserve qui correspondent à l'offre, et la carte « Booster » propose de remettre sur le CV une certification gardée en réserve.
+- **Réserve** (expériences, formations, groupes de compétences, langues, certifications) : tout reste en mémoire, un bouton œil « Sur le CV / Masqué » choisit ce qui apparaît (feuille, PDF, Word, score ATS).
+- **Coordonnées masquables** (email, téléphone, ville, LinkedIn, site / GitHub, date de naissance) : bouton œil à côté de chaque champ dans « Infos & photo ». L'information reste enregistrée mais n'apparaît ni sur le CV, ni dans le PDF, le Word ou la lettre ; l'analyseur la considère absente et le signale sans insister. Une section entière se masque dans « Mise en forme › Ordre des sections ». L'analyseur signale les éléments en réserve qui correspondent à l'offre, et la carte « Booster » propose de remettre sur le CV une certification gardée en réserve.
 - **Annuler / rétablir** (50 actions).
 - **Import d'un CV existant** (PDF, y compris Canva, ou Word .docx) :
   - le texte est réparti dans les sections ;

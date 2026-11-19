@@ -63,7 +63,12 @@ export interface InfosPerso {
   /** Facultatif, texte libre : « 12/03/2003 », « 22 ans »… */
   dateNaissance: string;
   photo: Photo | null;
+  /** Coordonnées gardées en mémoire mais masquées sur le CV (téléphone, LinkedIn…) */
+  masques?: ChampContact[];
 }
+
+/** Coordonnées que l'on peut masquer sur le CV */
+export type ChampContact = 'email' | 'telephone' | 'ville' | 'linkedin' | 'site' | 'dateNaissance';
 
 export interface Experience {
   id: string;

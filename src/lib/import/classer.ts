@@ -156,7 +156,7 @@ function versInfos(d: DonneesCV, lignes: string[], champ: ChampInfo): string[] {
       p[champ] = c[champ] || valeur;
       break;
     default:
-      (p as Record<Exclude<keyof InfosPerso, 'photo'>, string>)[champ] = valeur;
+      (p as Record<Exclude<keyof InfosPerso, 'photo' | 'masques'>, string>)[champ] = valeur;
   }
   return [];
 }

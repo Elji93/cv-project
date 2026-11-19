@@ -1,7 +1,7 @@
 // ============================================================================
 //  Fonctions utilitaires sur les CV : création de blocs vides, noms, titres
 // ============================================================================
-import type { CleSection, CV, Experience, Formation, Periode, Puce } from '../types';
+import type { ChampContact, CleSection, CV, Experience, Formation, InfosPerso, Periode, Puce } from '../types';
 import { ORDRE_PAR_DEFAUT, POLICES, STYLE_PAR_DEFAUT } from '../data/constantes';
 import { INTITULES_SECTIONS } from '../data/intitulesSections';
 
@@ -93,3 +93,18 @@ export const estImporte = (cv: CV) => !!cv.importeLe || /^CV importé/i.test(cv.
 
 /** Entrées affichées sur le CV (les entrées « en réserve » sont gardées en mémoire mais exclues) */
 export const affichees = <T extends { masquee?: boolean }>(liste: T[]): T[] => liste.filter(x => !x.masquee);
+
+/** Coordonnée masquée sur le CV (gardée en mémoire) ? */
+export const estMasque = (cv: CV, champ: ChampContact) => !!cv.donnees.infosPerso.masques?.includes(champ);
+
+/**
+ * Infos personnelles telles qu'elles apparaissent sur le CV : les coordonnées masquées sont vides.
+ * À utiliser partout où le CV est affiché, exporté ou analysé (feuille, PDF, Word, lettre, ATS).
+ */
+export function infosVisibles(cv: CV): InfosPerso {
+  const p = cv.donnees.infosPerso;
+  if (!p.masques?.length) return p;
+  const copie = { ...p };
+  for (const k of p.masques) copie[k] = '';
+  return copie;
+}

@@ -1,5 +1,5 @@
 // En-tête d'un bloc (expérience, formation…) avec boutons monter / descendre / supprimer
-import { ArrowDown, ArrowUp, ChevronDown, ChevronRight, Trash2 } from 'lucide-react';
+import { ArrowDown, ArrowUp, ChevronDown, ChevronRight, Eye, EyeOff, Trash2 } from 'lucide-react';
 import { confirmer } from '../../store/dialogues';
 
 interface Props {
@@ -21,15 +21,17 @@ export function OutilsBloc({ titre, premier, dernier, onMonter, onDescendre, onS
   return (
     <div className={`flex items-center gap-1 ${replie ? '' : 'mb-2'}`}>
       {onSurCv && (
-        <label className="inline-flex items-center gap-1 text-[11px] text-gray-600 shrink-0 cursor-pointer" title="Afficher cette entrée sur le CV">
-          <input type="checkbox" checked={!!surCv} onChange={e => onSurCv(e.target.checked)} /> Sur le CV
-        </label>
+        // Même bouton œil que pour les coordonnées : masquer garde l'entrée en mémoire (réserve)
+        <button type="button" onClick={() => onSurCv(!surCv)} aria-pressed={!!surCv}
+          title={surCv ? 'Affiché sur le CV. Cliquer pour le masquer : l’entrée reste en mémoire (réserve).' : 'Masqué : n’apparaît pas sur le CV. Cliquer pour l’afficher.'}
+          className={`shrink-0 inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] font-medium ${surCv ? 'text-gray-500 hover:text-gray-800 hover:bg-gray-100' : 'bg-gray-200 text-gray-700'}`}>
+          {surCv ? <><Eye size={13} /> Sur le CV</> : <><EyeOff size={13} /> Masqué</>}
+        </button>
       )}
       {onDeplier ? (
         <button className="flex-1 min-w-0 inline-flex items-center gap-1 text-left" onClick={onDeplier} aria-expanded={!replie}>
           {replie ? <ChevronRight size={14} className="shrink-0" /> : <ChevronDown size={14} className="shrink-0" />}
           <strong className={`text-[13px] truncate ${surCv === false ? 'text-gray-500' : ''}`}>{titre}</strong>
-          {surCv === false && <span className="shrink-0 text-[10.5px] font-semibold px-1.5 py-0.5 rounded bg-gray-200 text-gray-600">En réserve</span>}
         </button>
       ) : <strong className="flex-1 text-[13px] truncate">{titre}</strong>}
       <button className="icon-btn" aria-label="Monter" disabled={premier} onClick={onMonter}><ArrowUp size={14} /></button>

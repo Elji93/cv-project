@@ -82,9 +82,13 @@ export function genererConseils(cv: CV, r: ResultatAts, c: Contexte): Conseil[] 
   if (!c.titresOk.experiences) conseils.push({ priorite: 'haute', texte: `Renommez la section « ${titreSection(cv, 'experiences')} » en « ${enAnglais ? 'Professional Experience' : 'Expériences professionnelles'} ».` });
   if (!c.titresOk.formations) conseils.push({ priorite: 'haute', texte: `Renommez la section « ${titreSection(cv, 'formations')} » en « ${enAnglais ? 'Education' : 'Formation'} ».` });
   if (!c.titresOk.competences) conseils.push({ priorite: 'haute', texte: `Affichez une section « ${enAnglais ? 'Skills' : 'Compétences'} » : c'est là que les ATS cherchent les mots-clés.` });
-  const manque = (Object.entries(c.contact) as [keyof Contexte['contact'], boolean][]).filter(([, ok]) => !ok)
-    .map(([k]) => ({ email: 'email', telephone: 'téléphone', ville: 'ville', linkedin: 'URL LinkedIn' }[k]));
+  const NOMS_CONTACT = { email: 'email', telephone: 'téléphone', ville: 'ville', linkedin: 'URL LinkedIn' };
+  const absents = (Object.entries(c.contact) as [keyof Contexte['contact'], boolean][]).filter(([, ok]) => !ok).map(([k]) => k);
+  // masquée volontairement : on le signale sans insister ; vide : on invite à la compléter
+  const masques = absents.filter(k => cv.donnees.infosPerso.masques?.includes(k)).map(k => NOMS_CONTACT[k]);
+  const manque = absents.filter(k => !cv.donnees.infosPerso.masques?.includes(k)).map(k => NOMS_CONTACT[k]);
   if (manque.length) conseils.push({ priorite: 'moyenne', texte: `Complétez vos coordonnées : ${manque.join(', ')}.` });
+  if (masques.length) conseils.push({ priorite: 'basse', texte: `Vous avez masqué : ${masques.join(', ')}. C'est votre choix ; sachez seulement que certains ATS et recruteurs s'attendent à les trouver.` });
   if (!c.tientSurUnePage) conseils.push({ priorite: 'haute', texte: 'Votre CV dépasse une page A4 : utilisez « Tout faire tenir sur 1 page » dans l’éditeur.' });
   if (enAnglais && cv.langue === 'fr') conseils.push({ priorite: 'basse', texte: 'Offre en anglais : créez une version anglaise du CV (Mise en forme › « Créer une version anglaise ») : le texte est traduit via ChatGPT / Claude, titres de sections et dates compris.' });
   if (enAnglais && p.photo?.affichee) conseils.push({ priorite: 'basse', texte: 'Offre en anglais : la photo est déconseillée pour les candidatures UK / US. Décochez « Afficher » dans Infos & photo.' });

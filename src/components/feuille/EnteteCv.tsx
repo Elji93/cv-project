@@ -3,9 +3,9 @@
 //  et la lettre de motivation, pour une candidature à l'identité visuelle unique.
 // ============================================================================
 import { Fragment, type CSSProperties, type ReactNode } from 'react';
-import type { CV, InfosPerso } from '../../types';
+import type { ChampContact, CV, InfosPerso } from '../../types';
 import { styleRecadrage } from '../../lib/photo';
-import { policeCss } from '../../lib/cv';
+import { estMasque, policeCss } from '../../lib/cv';
 import { ChampEditable } from './ChampEditable';
 import { definitionTemplate } from './templates';
 
@@ -38,6 +38,8 @@ export function EnteteCv({ cv, modifier, sansPhoto, sansNaissance }: Props) {
 
   const visibles = COORDONNEES
     .filter(([k]) => !(sansNaissance && k === 'dateNaissance'))
+    // coordonnée masquée par l'utilisatrice : jamais affichée (ni imprimée), même en mode édition
+    .filter(([k]) => !estMasque(cv, k as ChampContact))
     .filter(([k], i) => rempli(p[k] as string) || (edition && i < 4));
   const photo = !sansPhoto && modele.photo && p.photo?.affichee ? p.photo : null;
 

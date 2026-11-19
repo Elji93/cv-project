@@ -13,7 +13,7 @@ import {
 } from 'docx';
 import { saveAs } from 'file-saver';
 import type { CV, Experience, Formation } from '../../types';
-import { affichees, nomComplet, policeWord, titreSection } from '../cv';
+import { affichees, infosVisibles, nomComplet, policeWord, titreSection } from '../cv';
 import { formaterPeriode } from '../dates';
 import { NIVEAUX_CECRL } from '../../data/constantes';
 import { photoRecadreePng } from '../photo';
@@ -189,7 +189,8 @@ export async function construireDocumentWord(cv: CV, avecPhoto = true): Promise<
 /** En-tête Word (nom, titre, coordonnées, photo) — identique à l'aperçu ; partagé avec la lettre */
 export async function enteteWord(cv: CV, o: { avecPhoto?: boolean; sansNaissance?: boolean; apresMm?: number } = {}): Promise<Paragraph[]> {
   const { style: s } = cv;
-  const p = cv.donnees.infosPerso;
+  // coordonnées masquées : absentes du document
+  const p = infosVisibles(cv);
   const police = policeWord(cv);
   const S = s.taillePolice;
   const couleur = s.couleur.replace('#', '').toUpperCase();
